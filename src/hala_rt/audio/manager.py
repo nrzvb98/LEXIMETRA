@@ -138,8 +138,7 @@ class AudioManager:
         self.playback_start_time = None  # Wall clock time when playback started
         self.playback_start_sample = 0   # Audio sample where playback started
         self.playback_end_sample = None  # Audio sample where bounded playback should stop
-        self.stream = None               # sounddevice stream
-        
+
         bundled_binary_dirs = _bundled_binary_dirs()
         # Finder-launched .app bundles do not reliably inherit the user's shell PATH.
         _prepend_existing_binary_dirs_to_path(bundled_binary_dirs)

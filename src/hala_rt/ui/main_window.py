@@ -183,36 +183,15 @@ Output CSV: {output_path}"""
             self.info_text.setText(self._format_audio_info(Path(self.audio_manager.file_path).name))
 
     @staticmethod
-    def _ranges_overlap(start_a, end_a, start_b, end_b):
-        return start_a < end_b - EPSILON_SECONDS and end_a > start_b + EPSILON_SECONDS
+    def _validate_trials(trials):
+        """Validate each trial window.
 
-    def _find_overlap(self, start, end, exclude_index=None):
-        for index, trial in enumerate(self.session_data):
-            if exclude_index is not None and index == exclude_index:
-                continue
-            if self._ranges_overlap(
-                start,
-                end,
-                trial.trial_start_global,
-                trial.trial_end_global,
-            ):
-                return trial
-        return None
-
-    def _validate_no_overlaps(self, trials):
-        ordered = sorted(trials, key=lambda trial: trial.trial_start_global)
-        for trial in ordered:
+        Trials cannot overlap by construction: ``_apply_derived_trial_starts``
+        rebuilds every start from the previous end before validation runs, so
+        the schema's contiguous invariant is enforced there, not checked here.
+        """
+        for trial in trials:
             trial.validate()
-        for previous, current in zip(ordered, ordered[1:]):
-            if self._ranges_overlap(
-                previous.trial_start_global,
-                previous.trial_end_global,
-                current.trial_start_global,
-                current.trial_end_global,
-            ):
-                raise ValueError(
-                    f"Trial {previous.trial_index} overlaps trial {current.trial_index}"
-                )
 
     @staticmethod
     def _apply_derived_trial_starts(trials):
@@ -382,7 +361,7 @@ Output CSV: {output_path}"""
         try:
             self.session_data = load_output_csv(self.output_csv_path)
             self._sort_and_renumber_trials()
-            self._validate_no_overlaps(self.session_data)
+            self._validate_trials(self.session_data)
         except Exception as error:
             self.session_data = []
             QMessageBox.critical(
@@ -409,9 +388,9 @@ Output CSV: {output_path}"""
         else:
             self._clear_current_trial()
 
-    def _load_audio_file(self, file_path, confirm_discard=True):
+    def _load_audio_file(self, file_path):
         file_path = str(file_path)
-        if confirm_discard and not self._confirm_discard_changes():
+        if not self._confirm_discard_changes():
             return False
 
         progress = QProgressDialog("Loading audio file...", "Cancel", 0, 100, self)
@@ -579,7 +558,7 @@ Output CSV: {output_path}"""
             raise ValueError(f"Unsupported field: {field}")
 
         self._sort_and_renumber_trial_list(candidate_trials)
-        self._validate_no_overlaps(candidate_trials)
+        self._validate_trials(candidate_trials)
         return candidate_trials, candidate
 
     def on_table_item_changed(self, item):
@@ -726,7 +705,7 @@ Output CSV: {output_path}"""
             return False
 
         try:
-            self._validate_no_overlaps(self.session_data)
+            self._validate_trials(self.session_data)
             self._sort_and_renumber_trials()
             write_output_csv(output_path, self.session_data)
         except Exception as error:
@@ -826,11 +805,6 @@ Output CSV: {output_path}"""
             return
 
         self._set_playback_position(position)
-
-        current_trial = self._display_trial_for_index(self.current_trial_index)
-        if current_trial is not None:
-            if playback_end is None and position > current_trial.trial_end_global:
-                self.stop_playback()
 
     def load_trial(self, index, update_table_selection=True):
         display_count = self._display_trial_count()

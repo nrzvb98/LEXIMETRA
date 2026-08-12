@@ -20,7 +20,6 @@ class SimpleWaveformWidget(BaseWaveformWidget):
         self.is_playing = False
         self.trials = []
         self.draft_range = None
-        self._selection_anchor = None
         self._dragging_cursor = False
         self.setToolTip("Click or drag the global timeline to place the next trial end cursor.")
 
@@ -28,7 +27,6 @@ class SimpleWaveformWidget(BaseWaveformWidget):
         return 0.0, self.duration
 
     def _reset_interaction_state(self):
-        self._selection_anchor = None
         self._dragging_cursor = False
 
     def set_audio_data(self, audio_data, sample_rate):
@@ -41,14 +39,17 @@ class SimpleWaveformWidget(BaseWaveformWidget):
         self._invalidate_background_cache()
         self.update()
 
+    # Both setters run on every controller refresh -- so after every marker set
+    # and every table edit -- while the drawn ranges usually have not changed.
+    # Forcing the cache to drop here re-scanned the whole recording each time
+    # (~35ms per click on 30min of audio). ``_cache_key`` already covers the
+    # trial and draft ranges, so let the key comparison decide.
     def set_trials(self, trials):
         self.trials = trials
-        self._invalidate_background_cache()
         self.update()
 
     def set_draft_range(self, draft_range):
         self.draft_range = draft_range
-        self._invalidate_background_cache()
         self.update()
 
     def set_playback_position(self, position):
