@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hala-rt"
+version = "0.1.0"
+description = "Manual trial-end cutting and reaction-time verification interface"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "PyQt6",
+    "numpy",
+    "pydub",
+    "sounddevice",
+    "soundfile",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+]
+packaging = [
+    "pyinstaller>=6.20",
+]
+
+[project.scripts]
+hala-rt = "hala_rt.app:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

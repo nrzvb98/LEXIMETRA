@@ -1,0 +1,30 @@
+# Virtual environments (any arch/suffix variant, e.g. .venv-x86_64)
+.venv*/
+
+# Python build and cache artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+*.spec
+
+# macOS
+.DS_Store
+
+# Runtime data and user outputs
+outputs/*
+*_hala_output*.csv
+
+# Audio data: keep real participant/session audio out of git
+*.wav
+*.mp3
+*.flac
+*.m4a
+*.m4v
+
+# Allow intentional examples
+!examples/audio/*.m4a
+!examples/outputs/*.csv
+!outputs/.gitkeep
