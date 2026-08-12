@@ -538,6 +538,6 @@ class AudioManager:
         if self.is_playing:
             try:
                 return sd.get_stream().active
-            except:
+            except Exception:
                 return False
         return False
