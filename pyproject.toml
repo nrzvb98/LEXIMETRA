@@ -23,6 +23,17 @@ dev = [
 packaging = [
     "pyinstaller>=6.20",
 ]
+# Automatic beep/VAD processing (src/hala_rt/processing). Optional: without it
+# the app runs exactly as before and reports the capability as unavailable.
+# torchaudio is unused by the pipeline but required by Silero's hubconf.
+# No macOS x86_64 wheels exist for these torch versions, so the Intel build
+# ships without this extra.
+processing = [
+    "torch>=2.12.0",
+    "torchaudio>=2.11.0",
+    "pandas>=3.0.3",
+    "scipy>=1.17.1",
+]
 
 [project.scripts]
 hala-rt = "hala_rt.app:main"
@@ -30,6 +41,12 @@ hala-rt = "hala_rt.app:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+"hala_rt.processing" = ["templates/*.wav", "VERSION"]
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+markers = [
+    "slow: runs the real processing pipeline (needs the 'processing' extra)",
+]

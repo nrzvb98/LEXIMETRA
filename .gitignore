@@ -28,3 +28,9 @@ outputs/*
 !examples/audio/*.m4a
 !examples/outputs/*.csv
 !outputs/.gitkeep
+
+# Source assets and test fixtures, not user data. The beep templates drive
+# detection (the vendored pipeline cannot run without them) and the frozen
+# baseline is what proves that pipeline was vendored faithfully.
+!src/hala_rt/processing/templates/*.wav
+!tests/data/**/*.csv
