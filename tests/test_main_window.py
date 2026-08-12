@@ -232,18 +232,35 @@ def test_loading_an_existing_csv_populates_the_session(window):
     assert trial_bounds(window) == [(1, 0.0, 4.0), (2, 4.0, 9.0)]
 
 
-def test_loading_a_csv_with_a_gap_closes_it_to_stay_contiguous(window):
+def test_loading_a_csv_with_a_gap_closes_it_and_says_so(window, dialogs):
     # The schema requires each trial to start at the previous end; a hand-edited
-    # gap is normalised on load rather than carried through.
+    # gap is normalised on load, but not silently -- the next save would write
+    # the changed values back.
     write_output_csv(
         window.output_csv_path,
         [TrialData(1, 0.0, 5.0, 1.0), TrialData(2, 7.0, 10.0, 7.5)],
     )
 
-    window._load_trials_for_audio()
-    window._sort_and_renumber_trials()
+    status, tone = window._load_trials_for_audio()
 
     assert trial_bounds(window) == [(1, 0.0, 5.0), (2, 5.0, 10.0)]
+    assert tone == "warning"
+    assert "adjusted" in status
+    warned = [text for kind, title, text in dialogs if kind == "warning"]
+    assert warned and "7.0000s -> 5.0000s" in warned[0]
+
+
+def test_loading_an_already_contiguous_csv_warns_about_nothing(window, dialogs):
+    write_output_csv(
+        window.output_csv_path,
+        [TrialData(1, 0.0, 5.0, 1.0), TrialData(2, 5.0, 10.0, 5.5)],
+    )
+
+    status, tone = window._load_trials_for_audio()
+
+    assert tone == "success"
+    assert "adjusted" not in status
+    assert not [kind for kind, _, _ in dialogs if kind == "warning"]
 
 
 # --- trial detail view window ----------------------------------------------

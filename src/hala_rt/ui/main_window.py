@@ -36,6 +36,7 @@ from hala_rt.ui.table_columns import COLUMN_LABELS, resize_table_columns
 
 MIN_TRIAL_DURATION_SECONDS = 0.01
 EPSILON_SECONDS = 1e-6
+MAX_REPORTED_ADJUSTMENTS = 10
 
 
 class HALAMainWindow(QMainWindow):
@@ -359,7 +360,9 @@ Output CSV: {output_path}"""
             return "No output CSV found. Create trials manually.", "warning"
 
         try:
-            self.session_data = load_output_csv(self.output_csv_path)
+            loaded = load_output_csv(self.output_csv_path)
+            adjusted = self._noncontiguous_trial_starts(loaded)
+            self.session_data = loaded
             self._sort_and_renumber_trials()
             self._validate_trials(self.session_data)
         except Exception as error:
@@ -373,7 +376,46 @@ Output CSV: {output_path}"""
 
         if not self.session_data:
             return "Output CSV is empty. Create trials manually.", "warning"
+
+        if adjusted:
+            detail = "\n".join(
+                f"  Trial {position}: {format_seconds(was)}s -> {format_seconds(now)}s"
+                for position, was, now in adjusted[:MAX_REPORTED_ADJUSTMENTS]
+            )
+            if len(adjusted) > MAX_REPORTED_ADJUSTMENTS:
+                detail += f"\n  ... and {len(adjusted) - MAX_REPORTED_ADJUSTMENTS} more"
+            QMessageBox.warning(
+                self,
+                "Trial Starts Adjusted",
+                "Each trial must start where the previous one ended, so these "
+                "starts were moved to close gaps or overlaps:\n\n"
+                f"{detail}\n\nThe file on disk is unchanged until you save.",
+            )
+            return (
+                f"Loaded {len(self.session_data)} trial(s); "
+                f"{len(adjusted)} trial start(s) adjusted to stay contiguous.",
+                "warning",
+            )
         return f"Loaded {len(self.session_data)} trial(s) from output CSV.", "success"
+
+    @staticmethod
+    def _noncontiguous_trial_starts(trials):
+        """Report starts that do not chain off the previous trial's end.
+
+        ``_apply_derived_trial_starts`` rewrites these silently. A CSV touched
+        by hand or produced elsewhere can carry gaps, and the user should hear
+        about it before those values are written back on the next save.
+        """
+        ordered = sorted(
+            trials, key=lambda trial: (trial.trial_start_global, trial.trial_end_global)
+        )
+        adjusted = []
+        expected_start = 0.0
+        for position, trial in enumerate(ordered, start=1):
+            if abs(trial.trial_start_global - expected_start) > EPSILON_SECONDS:
+                adjusted.append((position, trial.trial_start_global, expected_start))
+            expected_start = trial.trial_end_global
+        return adjusted
 
     def _refresh_trial_views(self, select_index=None):
         self._sort_and_renumber_trials()
