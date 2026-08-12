@@ -24,6 +24,7 @@ class TrialWaveformWidget(BaseWaveformWidget):
         self.trial_data = None
         self.full_audio = None
         self.sample_rate = 1
+        self._view_identity_key = None
         self.play_position_global = 0.0
         self.view_start = 0.0
         self.view_end = 1.0
@@ -203,22 +204,47 @@ class TrialWaveformWidget(BaseWaveformWidget):
         self.update()
         return cursor_time
 
+    @staticmethod
+    def _view_identity(trial):
+        """The trial properties that decide whether the current view still applies."""
+        return (
+            trial.trial_index,
+            trial.trial_start_global,
+            trial.trial_end_global,
+        )
+
     def set_trial(self, trial, full_audio, sr):
+        # Marker edits re-enter through the controller's refresh, handing back the
+        # same trial window. Keep the zoom and selection in that case so placing
+        # one marker does not throw away the zoom needed to place the next.
+        # Compare against a snapshot, not against ``self.trial_data``: the
+        # controller mutates trials in place, so the live object would always
+        # compare equal to itself and a changed window would go unnoticed.
+        identity = self._view_identity(trial)
+        same_window = (
+            self._view_identity_key is not None
+            and self.full_audio is full_audio
+            and self._view_identity_key == identity
+        )
+
         self.trial_data = trial
         self.full_audio = full_audio
         self.sample_rate = sr
+        self._view_identity_key = identity
 
-        self.view_start = trial.trial_start_global
-        self.view_end = trial.trial_end_global
-        self.play_position_global = trial.beep_timestamp_global
-        self.show_playhead_label = True
-        self._invalidate_background_cache()
-        self.clear_selection()
+        if not same_window:
+            self.view_start = trial.trial_start_global
+            self.view_end = trial.trial_end_global
+            self.play_position_global = trial.beep_timestamp_global
+            self.show_playhead_label = True
+            self._invalidate_background_cache()
+            self.clear_selection()
         self.update()
 
     def clear_trial(self):
         self.trial_data = None
         self.full_audio = None
+        self._view_identity_key = None
         self._invalidate_background_cache()
         self.clear_selection()
         self.update()
