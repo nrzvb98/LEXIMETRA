@@ -99,6 +99,36 @@ def test_slices_match_frozen_hashes(pipeline_output):
     assert not mismatched, f"slice audio differs from baseline: {mismatched}"
 
 
+def test_service_places_real_pipeline_output(tmp_path):
+    """The service's artifact layout, exercised against the real pipeline.
+
+    ``test_processing_service.py`` covers this with the pipeline faked; this is
+    the same contract with nothing stubbed, so a mismatch between the fake's
+    call signature and the real one cannot hide.
+    """
+    from hala_rt.data.processing_service import ProcessingStatus, run_processing
+
+    audio = tmp_path / "session.m4a"
+    audio.write_bytes(SAMPLE_AUDIO.read_bytes())
+
+    stages = []
+    outcome = run_processing(audio, on_progress=lambda *args: stages.append(args))
+
+    assert outcome.status is ProcessingStatus.SUCCESS, outcome.message
+    assert outcome.trial_count == 12
+    assert outcome.csv_path == tmp_path / "session_hala_output.csv"
+    assert outcome.csv_path.is_file()
+    assert outcome.backup_path is None
+
+    sidecar = tmp_path / "session_hala"
+    assert len(list((sidecar / "HALA_Slices").glob("*.wav"))) == 12
+    assert (sidecar / "session_HALA_Full_Analysis_Results.csv").is_file()
+    assert (sidecar / "session_HALA_Analysis_Results.csv").is_file()
+    assert not (sidecar / "session_hala_output.csv").exists()
+
+    assert {stage for stage, _, _ in stages} == {"load", "slices", "vad", "export"}
+
+
 def test_output_csv_loads_through_the_app(pipeline_output):
     """The pipeline's export must satisfy the app's own loader and validation.
 
