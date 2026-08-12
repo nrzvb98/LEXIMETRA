@@ -20,12 +20,11 @@ mistake made during the copy itself.
 Slices are hashed rather than committed: they are 12 WAVs of generated audio,
 and a hash catches drift just as well as the bytes would.
 
-## Relationship to `examples/outputs/trial_sample_hala_output.csv`
-
-That file is an older export of the same recording. Every timing column matches
-this baseline exactly; it differs only in `segments_count` (all zeros there),
-which the upstream Stage 3 export fix made a real per-trial VAD count when the
-pipeline was re-baselined on 2026-08-12.
+These files double as the worked example of what the pipeline produces:
+`examples/audio/trial_sample.m4a` in, these out. (An older copy of the export
+lived at `examples/outputs/`; it predated the 2026-08-12 re-baseline, carried
+`segments_count` as all zeros, and was removed rather than left to contradict
+this one.)
 
 ## Scope
 

@@ -14,7 +14,6 @@ dist/
 .DS_Store
 
 # Runtime data and user outputs
-outputs/*
 *_hala_output*.csv
 
 # Audio data: keep real participant/session audio out of git
@@ -26,8 +25,6 @@ outputs/*
 
 # Allow intentional examples
 !examples/audio/*.m4a
-!examples/outputs/*.csv
-!outputs/.gitkeep
 
 # Source assets and test fixtures, not user data. The beep templates drive
 # detection (the vendored pipeline cannot run without them) and the frozen

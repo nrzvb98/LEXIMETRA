@@ -16,3 +16,18 @@ Second-based timestamps are stored with 4 decimal places. Reaction times are sto
 | `flag_anticipatory` | Boolean indicating that the response was physiologically too fast. |
 | `flag_timeout` | Boolean indicating that no response was detected in the trial window. |
 | `segments_count` | Number of distinct speech bursts found in this trial. |
+
+## Where the rows come from
+
+Rows are produced two ways, and the schema is identical either way:
+
+- **Automatic analysis** — the vendored pipeline writes this file when a
+  recording is loaded (see the README's *Automatic analysis* section). It is
+  also the pipeline's own `<stem>_hala_output.csv` export format, which is why
+  the two match column for column.
+- **By hand** — trials cut in the app, or an existing CSV corrected in the
+  output table and saved.
+
+The app makes no distinction on load: a hand-written CSV and an analyzed one are
+read by the same loader and held to the same validation, including the rule that
+trials tile the recording without gaps.

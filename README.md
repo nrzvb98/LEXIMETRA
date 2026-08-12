@@ -1,6 +1,6 @@
 # HALA RT Verification Interface
 
-A desktop tool for **manual trial-end cutting, playback, and reaction-time (RT) verification** of speech-response audio sessions. Load a single session recording, mark trial boundaries and beep/speech events by ear and by eye, and export a clean per-trial CSV — or load an existing output CSV and correct it by hand.
+A desktop tool for **automatic trial analysis and reaction-time (RT) verification** of speech-response audio sessions. Load a session recording and it is analyzed on the spot — beeps detected, trials cut, speech onsets marked — leaving you to check and correct the results rather than produce them. Everything can still be done by hand when the analysis is wrong or unavailable.
 
 Built with [PyQt6](https://pypi.org/project/PyQt6/).
 
@@ -9,8 +9,9 @@ Built with [PyQt6](https://pypi.org/project/PyQt6/).
 ## Features
 
 - **Load a full session** as WAV, MP3, FLAC, or M4A and scrub it on a global timeline.
-- **Cut trials manually** — drag the global cursor to a trial boundary and click *Add Trial End*. Each new trial starts where the previous one ended.
-- **Per-trial detail view** with zoom, so you can place markers precisely:
+- **Automatic analysis on load** — beep detection, per-trial slicing, Silero VAD, and RT metrics, producing the output CSV without any manual cutting. A 2.5-minute session takes about 7 seconds. If a CSV already exists you are asked whether to keep it or analyze again; the previous file is backed up either way.
+- **Cut trials manually** whenever you need to — drag the global cursor to a trial boundary and click *Add Trial End*. Each new trial starts where the previous one ended.
+- **Per-trial detail view** with zoom, so you can check and move markers precisely:
   - **Beep Start** — the trial's onset cue.
   - **First Speech** — first sound after the beep (including fillers like *"umm"*).
   - **Main Response** — the main response word, skipping fillers.
@@ -18,6 +19,8 @@ Built with [PyQt6](https://pypi.org/project/PyQt6/).
 - **Editable output table** — every column is hand-editable, with validation.
 - **CSV export** following the [output schema](docs/output_schema.md), plus *Save As* for edited copies.
 - Playback with selection looping, keyboard scrubbing, and waveform visualization.
+
+Automatic analysis is optional. Without it the app behaves exactly as it always has — it reports the capability as unavailable at startup and every trial is cut by hand.
 
 ## Requirements
 
@@ -35,41 +38,67 @@ Install FFmpeg:
 ## Installation
 
 ```bash
+python -m pip install -e ".[processing]"
+```
+
+The `processing` extra adds automatic analysis (torch, torchaudio, pandas, scipy —
+roughly 500 MB). Install without it for verification only:
+
+```bash
 python -m pip install -e .
 ```
 
 The app degrades gracefully if optional audio backends are missing — it reports
 which dependencies are absent on startup and continues with limited functionality.
 
+> **Apple Silicon only for the analysis extra.** PyTorch no longer publishes
+> macOS x86_64 wheels at the versions this pipeline pins, so on Intel Macs the
+> app installs and runs but reports automatic analysis as unavailable.
+
 ## Build a macOS App
 
 On macOS, install the packaging extra and run the build script:
 
 ```bash
-python -m pip install -e ".[packaging]"
+python -m pip install -e ".[packaging,processing]"
 packaging/macos/build_app.sh
 ```
 
 The script creates `dist/HALA RT.app` and the sendable archive
-`dist/HALA_RT_0.1.0_macos_arm64.zip`. The archive includes Python, the Python
-dependencies, and a bundled LGPL-oriented FFmpeg build for M4A/M4V decoding, so
-recipients do not need to install Python or Homebrew FFmpeg. Without Developer
-ID notarization, recipients may need to Control-click the app and choose **Open**
-on first launch.
+`dist/HALA_RT_0.2.0_macos_arm64.zip` (**212 MB**). The archive includes Python,
+the Python dependencies, a bundled LGPL-oriented FFmpeg build for M4A/M4V
+decoding, and the analysis pipeline with its Silero VAD model, so recipients need
+neither Python, nor Homebrew FFmpeg, nor a network connection on first run.
+Without Developer ID notarization, recipients may need to Control-click the app
+and choose **Open** on first launch.
 
-The default build targets Apple Silicon (`arm64`). To build an Intel Mac archive,
-create an x86_64 Python 3.11 virtualenv at `.venv-x86_64`, install the same
-packaging extra in that environment, then run:
+Analysis is bundled only if torch is installed in the build environment;
+otherwise the script says so and builds a verification-only app (~53 MB). Before
+signing, the build runs the packaged binary with `HALA_SELF_TEST=1` and fails
+unless it can import the pipeline, find the beep templates, and load the VAD
+model — bundling breaks in ways the test suite cannot see, and this stops those
+reaching a user.
+
+The default build targets Apple Silicon (`arm64`). An Intel build needs an
+x86_64 Python 3.11 virtualenv at `.venv-x86_64`:
 
 ```bash
 TARGET_ARCH=x86_64 packaging/macos/build_app.sh
 ```
 
-That produces `dist/HALA_RT_0.1.0_macos_x86_64.zip`. On Apple Silicon build
-machines, the Intel build requires Rosetta and an x86_64-capable Python
-environment; on Intel Macs it can be built natively.
+That produces `dist/HALA_RT_0.2.0_macos_x86_64.zip`, always without automatic
+analysis — there are no macOS x86_64 torch wheels — so it is a verification-only
+app. On Apple Silicon build machines the Intel build requires Rosetta and an
+x86_64-capable Python environment; on Intel Macs it can be built natively.
 
 ## Build a Windows App
+
+> **The Windows script has not been updated for automatic analysis.** Build it in
+> an environment *without* the `processing` extra. torch has Windows wheels, but
+> the script lacks the collection and pruning steps and the self-test the macOS
+> one has, so a build made with torch installed would bundle it incompletely and
+> fail when a user loads a recording. Installed as below, it produces the same
+> verification-only app it always did.
 
 On a Windows x64 machine, create a Python 3.11 virtualenv, install the packaging
 extra, then run:
@@ -80,7 +109,7 @@ powershell -ExecutionPolicy Bypass -File packaging\windows\build_app.ps1
 ```
 
 The script creates `dist\HALA RT\HALA RT.exe` and the sendable archive
-`dist\HALA_RT_0.1.0_windows_x64.zip`. The Windows package bundles Python, the
+`dist\HALA_RT_0.2.0_windows_x64.zip`. The Windows package bundles Python, the
 Python dependencies, the HALA RT icon, and `ffmpeg.exe` / `ffprobe.exe` under
 `_internal\bin` so M4A/M4V decoding works without a user-installed FFmpeg.
 
@@ -103,10 +132,26 @@ python -m hala_rt
 ```
 
 1. Click **Load Audio File** and choose a WAV, MP3, FLAC, or M4A file.
-2. On the **Global Timeline**, click or drag to place the trial-end cursor, then click **Add Trial End**. Repeat to cut the session into trials.
-3. Select a trial and use the **Trial Detail View** to place the **Beep Start**, **First Speech**, and **Main Response** markers. Reaction times are filled in automatically.
+2. The recording is analyzed automatically and the trials appear with their markers already placed. If an output CSV already exists you are asked whether to keep it or analyze again.
+3. Step through the trials and check them in the **Trial Detail View**, moving the **Beep Start**, **First Speech**, and **Main Response** markers where the analysis got it wrong. Reaction times update as you go.
 4. Edit any cell in the **Trial Output Editor** table directly if needed.
 5. Click **Save Output CSV** (defaults to `<audiofile>_hala_output.csv`) or **Save Output CSV As…** for an edited copy.
+
+To cut trials by hand instead — when a recording has no beeps, or analysis is not
+installed — place the trial-end cursor on the **Global Timeline** and click
+**Add Trial End**, repeating to divide the session.
+
+### Files written for `/sessions/p001.m4a`
+
+| Path | Contents |
+| --- | --- |
+| `/sessions/p001_hala_output.csv` | The output CSV the app loads and saves |
+| `/sessions/p001_hala/HALA_Slices/Trial_NNN.wav` | Per-trial audio from the analysis |
+| `/sessions/p001_hala/p001_HALA_Full_Analysis_Results.csv` | Absolute beep/speech/hesitation timings |
+| `/sessions/p001_hala/p001_HALA_Analysis_Results.csv` | RT and response-type summary |
+
+Re-analyzing renames the existing output CSV to `p001_hala_output_backup.csv`
+before writing a new one, so hand-verified work is never overwritten silently.
 
 ### Keyboard shortcuts
 
@@ -142,6 +187,9 @@ the UI module builds *structure* (no logic), styling resolves through
 `theme` / `palette` tokens, and output path/CSV logic lives in the data layer.
 Audio and the data model are independent, GUI-agnostic layers.
 
+The analysis pipeline is a *vendored copy* of a separate project and is treated
+as a black box behind one service — see [Automatic analysis](#automatic-analysis).
+
 ```text
 HALA_RT_v1/
   README.md
@@ -149,25 +197,32 @@ HALA_RT_v1/
   .gitignore
   docs/
     output_schema.md
+    integration_plan.md
   src/
     hala_rt/
       app.py
       __main__.py
       audio/
       data/
+      processing/     # vendored pipeline (generated -- do not edit)
       ui/
       widgets/
   tests/
-  examples/
-  outputs/
+    data/processing_baseline/
+  tools/
+    sync_processing.py
+    vendor_silero.py
+  examples/audio/
 ```
 
 ### Entry point & controller
 
 - **`src/hala_rt/app.py`** — Application entry point (`python -m hala_rt` or `hala-rt`).
-  Prints a startup dependency report (pydub / soundfile / sounddevice and FFmpeg
-  availability), creates the `QApplication`, and shows the main window. Degrades
-  gracefully when optional backends are missing.
+  Prints a startup dependency report (pydub / soundfile / sounddevice, FFmpeg, and
+  whether automatic analysis is available), creates the `QApplication`, and shows
+  the main window. Degrades gracefully when optional backends are missing. Also
+  holds `self_test()`, which the macOS build script runs against the packaged
+  binary (`HALA_SELF_TEST=1`) to prove a bundle can actually analyze.
 - **`src/hala_rt/ui/main_window.py`** — `HALAMainWindow`, the controller. Owns session
   state (the list of `TrialData`, the current trial index, unsaved-changes
   tracking, the output CSV path) and all behavior: playback timer and transport,
@@ -217,6 +272,52 @@ HALA_RT_v1/
   labels, per-column tooltips (each naming its CSV field), and the width-fitting
   logic that distributes viewport space without ever clipping a header label.
 
+## Automatic analysis
+
+The pipeline that detects beeps and speech is developed and validated in a
+separate repository, **Hala_Processing**, and vendored here so the app builds
+and packages from one checkout.
+
+- **`src/hala_rt/processing/`** — the vendored pipeline. **Generated, not
+  hand-edited.** Upstream's package is also called `hala_rt`, so every
+  self-reference is rewritten to `hala_rt.processing` on the way in.
+- **`src/hala_rt/data/processing_service.py`** — `run_processing()`, the only
+  entry point the app uses. Returns a typed `ProcessingOutcome` and **never
+  raises**: a missing dependency, a recording with no beeps, and a cancelled run
+  are all statuses to report, because the manual workflow is always still there.
+  Imports torch lazily, so launching the app costs nothing for anyone who only
+  verifies existing CSVs.
+- **`src/hala_rt/ui/processing_worker.py`** — runs the service on a `QThread`
+  so the window stays responsive, with a backstop that keeps any exception from
+  escaping `run()` (PyQt6 turns those into a fatal abort of the process).
+
+### Changing the pipeline
+
+Edit it **upstream**, validate there with `regression_check.py` (which has the
+full multi-recording reference set), commit, then re-vendor:
+
+```bash
+python tools/sync_processing.py --apply --upstream ../../Hala_Processing
+```
+
+`tools/sync_processing.py` with no arguments checks for drift and exits 1 with a
+diff if the vendored copy no longer matches upstream, which is what makes "edit
+upstream, not the copy" enforceable. `tools/vendor_silero.py` does the same job
+for the bundled Silero VAD model.
+
+Then confirm nothing moved:
+
+```bash
+python -m pytest tests/test_processing_regression.py
+```
+
+That compares against `tests/data/processing_baseline/`, frozen from upstream
+*before* the copy was made, so it catches vendoring mistakes and not merely
+later drift. See that directory's README for scope and re-baselining.
+
 ### Reference
 
 - **`docs/output_schema.md`** — The canonical CSV output schema (Phase 5).
+- **`docs/integration_plan.md`** — How automatic analysis was integrated: the
+  decisions taken, the corrections made along the way, and what is deliberately
+  left undone (Windows and Intel builds, the ONNX size optimization).
