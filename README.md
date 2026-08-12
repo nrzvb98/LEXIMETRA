@@ -1,4 +1,4 @@
-# HALA RT Verification Interface
+# LEXIMETRA
 
 A desktop tool for **automatic trial analysis and reaction-time (RT) verification** of speech-response audio sessions. Load a session recording and it is analyzed on the spot — beeps detected, trials cut, speech onsets marked — leaving you to check and correct the results rather than produce them. Everything can still be done by hand when the analysis is wrong or unavailable.
 
@@ -64,8 +64,8 @@ python -m pip install -e ".[packaging,processing]"
 packaging/macos/build_app.sh
 ```
 
-The script creates `dist/HALA RT.app` and the sendable archive
-`dist/HALA_RT_0.2.0_macos_arm64.zip` (**212 MB**). The archive includes Python,
+The script creates `dist/LEXIMETRA.app` and the sendable archive
+`dist/LEXIMETRA_0.2.0_macos_arm64.zip` (**212 MB**). The archive includes Python,
 the Python dependencies, a bundled LGPL-oriented FFmpeg build for M4A/M4V
 decoding, and the analysis pipeline with its Silero VAD model, so recipients need
 neither Python, nor Homebrew FFmpeg, nor a network connection on first run.
@@ -86,7 +86,7 @@ x86_64 Python 3.11 virtualenv at `.venv-x86_64`:
 TARGET_ARCH=x86_64 packaging/macos/build_app.sh
 ```
 
-That produces `dist/HALA_RT_0.2.0_macos_x86_64.zip`, always without automatic
+That produces `dist/LEXIMETRA_0.2.0_macos_x86_64.zip`, always without automatic
 analysis — there are no macOS x86_64 torch wheels — so it is a verification-only
 app. On Apple Silicon build machines the Intel build requires Rosetta and an
 x86_64-capable Python environment; on Intel Macs it can be built natively.
@@ -108,9 +108,9 @@ python -m pip install -e ".[packaging]"
 powershell -ExecutionPolicy Bypass -File packaging\windows\build_app.ps1
 ```
 
-The script creates `dist\HALA RT\HALA RT.exe` and the sendable archive
-`dist\HALA_RT_0.2.0_windows_x64.zip`. The Windows package bundles Python, the
-Python dependencies, the HALA RT icon, and `ffmpeg.exe` / `ffprobe.exe` under
+The script creates `dist\LEXIMETRA\LEXIMETRA.exe` and the sendable archive
+`dist\LEXIMETRA_0.2.0_windows_x64.zip`. The Windows package bundles Python, the
+Python dependencies, the LEXIMETRA icon, and `ffmpeg.exe` / `ffprobe.exe` under
 `_internal\bin` so M4A/M4V decoding works without a user-installed FFmpeg.
 
 By default, `packaging\windows\build_ffmpeg.ps1` builds FFmpeg from the official
@@ -190,8 +190,16 @@ Audio and the data model are independent, GUI-agnostic layers.
 The analysis pipeline is a *vendored copy* of a separate project and is treated
 as a black box behind one service — see [Automatic analysis](#automatic-analysis).
 
+> **A note on names.** The product is LEXIMETRA; the Python package is still
+> `hala_rt`, and the data keeps its HALA naming — `<stem>_hala_output.csv`, the
+> `_hala/` sidecar, `HALA_Slices/`, and the `HALA_*` environment variables. That
+> split is deliberate: those filenames tie the app to an existing corpus of
+> recordings and to the study tooling in `Hala_Processing` that reads them, so
+> renaming them would orphan data rather than tidy it. Renaming the Python
+> package is possible later; renaming the data format is a migration.
+
 ```text
-HALA_RT_v1/
+LEXIMETRA/
   README.md
   pyproject.toml
   .gitignore
@@ -217,7 +225,7 @@ HALA_RT_v1/
 
 ### Entry point & controller
 
-- **`src/hala_rt/app.py`** — Application entry point (`python -m hala_rt` or `hala-rt`).
+- **`src/hala_rt/app.py`** — Application entry point (`python -m hala_rt` or `leximetra`).
   Prints a startup dependency report (pydub / soundfile / sounddevice, FFmpeg, and
   whether automatic analysis is available), creates the `QApplication`, and shows
   the main window. Degrades gracefully when optional backends are missing. Also

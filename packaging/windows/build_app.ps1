@@ -8,7 +8,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$AppName = "HALA RT"
+$AppName = "LEXIMETRA"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RootDir = Resolve-Path (Join-Path $ScriptDir "..\..")
 $DistDir = Join-Path $RootDir "dist"
@@ -55,7 +55,7 @@ try {
         throw "Windows packaging currently supports x64 Python only; this virtualenv reports $PythonMachine."
     }
 
-    $ZipPath = Join-Path $DistDir "HALA_RT_${Version}_windows_$TargetArch.zip"
+    $ZipPath = Join-Path $DistDir "LEXIMETRA_${Version}_windows_$TargetArch.zip"
     Write-Host "Building $AppName $Version for Windows $TargetArch..."
 
     Remove-Item -Recurse -Force -LiteralPath $BuildDir, $AppDir, $ZipPath -ErrorAction SilentlyContinue

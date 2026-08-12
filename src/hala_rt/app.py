@@ -1,10 +1,11 @@
 """
-HALA RT Verification Interface
-Manual trial cutting, playback, and CSV output editing
+LEXIMETRA
+Automatic trial analysis and reaction-time verification
 
 Installation:
 ------------
-python -m pip install -e .
+python -m pip install -e ".[processing]"   # with automatic analysis
+python -m pip install -e .                 # verification only
 
 System Requirements:
 -------------------
@@ -17,9 +18,11 @@ Usage:
 ------
 python -m hala_rt
 
-Then click "Load Audio" and select a WAV, MP3, FLAC, or M4A file.
-Click or drag the Global Timeline to place the trial end cursor, then click "Add Trial End".
-Press Play or Spacebar to start playback.
+Click "Load Audio File" and select a WAV, MP3, FLAC, or M4A file. The
+recording is analyzed on load -- beeps detected, trials cut, speech onsets
+marked -- and the trials appear ready to check. Where the analysis is wrong,
+or unavailable, place the trial-end cursor on the Global Timeline and click
+"Add Trial End" to cut trials by hand. Press Play or Spacebar for playback.
 """
 
 import os
@@ -85,7 +88,7 @@ def self_test():
 def main():
     # Check dependencies
     print("\n" + "=" * 60)
-    print("HALA RT Verification Interface - Manual Trial Editor")
+    print("LEXIMETRA - Automatic trial analysis and reaction-time verification")
     print("=" * 60)
     print("\nChecking dependencies...")
 

@@ -1,4 +1,4 @@
-"""Qt style sheets for the HALA RT interface, composed from palette tokens.
+"""Qt style sheets for the LEXIMETRA interface, composed from palette tokens.
 
 Keeping the QSS here (rather than inline in the widget tree) means the main
 window builds structure, not strings, and every color resolves to one token in

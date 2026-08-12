@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_NAME="HALA RT"
-BUNDLE_IDENTIFIER="com.nrzvb98.halart"
+APP_NAME="LEXIMETRA"
+BUNDLE_IDENTIFIER="com.nrzvb98.leximetra"
 TARGET_ARCH="${TARGET_ARCH:-arm64}"
 FFMPEG_VERSION="${FFMPEG_VERSION:-8.0.1}"
 HALA_BUNDLE_FFMPEG="${HALA_BUNDLE_FFMPEG:-1}"
@@ -81,7 +81,7 @@ if [[ "${BUNDLE_PROCESSING}" == "1" && ! -f "${ROOT_DIR}/src/hala_rt/processing/
 fi
 
 VERSION="$("${PYTHON_CMD[@]}" -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
-ZIP_NAME="HALA_RT_${VERSION}_macos_${TARGET_ARCH}.zip"
+ZIP_NAME="LEXIMETRA_${VERSION}_macos_${TARGET_ARCH}.zip"
 BUILD_DIR="${ROOT_DIR}/build/macos/${TARGET_ARCH}"
 DIST_DIR="${ROOT_DIR}/dist"
 APP_PATH="${DIST_DIR}/${APP_NAME}.app"

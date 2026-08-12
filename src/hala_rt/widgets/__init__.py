@@ -1,2 +1,2 @@
-"""Waveform widgets used by the HALA RT interface."""
+"""Waveform widgets used by the LEXIMETRA interface."""
 

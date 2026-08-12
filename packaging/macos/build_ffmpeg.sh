@@ -86,7 +86,7 @@ write_license_files() {
     cat > "${LICENSE_DIR}/README.md" <<EOF
 # Bundled FFmpeg
 
-HALA RT bundles FFmpeg ${FFMPEG_VERSION} for local audio decoding in the
+LEXIMETRA bundles FFmpeg ${FFMPEG_VERSION} for local audio decoding in the
 packaged macOS app. This build is configured without GPL or nonfree flags.
 
 This notice is provided for engineering compliance hygiene and is not legal

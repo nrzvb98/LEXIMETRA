@@ -86,7 +86,7 @@ function Write-LicenseFiles {
     @(
         "# Bundled FFmpeg",
         "",
-        "HALA RT bundles FFmpeg $FFmpegVersion for local audio decoding in the packaged",
+        "LEXIMETRA bundles FFmpeg $FFmpegVersion for local audio decoding in the packaged",
         "Windows app. This build is configured without GPL or nonfree flags.",
         "",
         "This notice is provided for engineering compliance hygiene and is not legal",

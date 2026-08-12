@@ -1,4 +1,4 @@
-"""Centralized design tokens for the HALA RT interface.
+"""Centralized design tokens for the LEXIMETRA interface.
 
 Solid colors are plain hex strings so they drop straight into both Qt style
 sheets (`f"color: {palette.TEXT}"`) and painters (`QColor(palette.TEXT)`).

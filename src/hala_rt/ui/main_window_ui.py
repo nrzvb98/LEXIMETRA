@@ -57,14 +57,14 @@ def _build_header(layout):
     header_layout.setSpacing(2)
     header_layout.setContentsMargins(0, 0, 0, 0)
 
-    header = QLabel("HALA RT Verification Interface")
+    header = QLabel("LEXIMETRA")
     header_font = QFont("Arial", 26, QFont.Weight.Bold)
     header_font.setLetterSpacing(QFont.SpacingType.PercentageSpacing, 100.5)
     header.setFont(header_font)
     header.setStyleSheet(f"color: {palette.TEXT};")
     header_layout.addWidget(header)
 
-    subtitle = QLabel("Manual trial-end cutting and CSV output editor")
+    subtitle = QLabel("Automatic trial analysis and reaction-time verification")
     subtitle.setStyleSheet(f"color: {palette.TEXT_MUTED}; font-size: 15px; font-weight: normal;")
     subtitle.setContentsMargins(0, 0, 0, 0)
     header_layout.addWidget(subtitle)

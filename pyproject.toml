@@ -3,9 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "hala-rt"
+name = "leximetra"
 version = "0.2.0"
-description = "Automatic trial analysis and reaction-time verification interface"
+description = "Automatic trial analysis and reaction-time verification for speech recordings"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -36,6 +36,8 @@ processing = [
 ]
 
 [project.scripts]
+leximetra = "hala_rt.app:main"
+# Kept so existing shells and notes that call `hala-rt` still work.
 hala-rt = "hala_rt.app:main"
 
 [tool.setuptools.packages.find]

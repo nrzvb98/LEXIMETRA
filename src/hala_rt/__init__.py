@@ -1,2 +1,2 @@
-"""HALA RT verification interface package."""
+"""LEXIMETRA: automatic trial analysis and reaction-time verification."""
 

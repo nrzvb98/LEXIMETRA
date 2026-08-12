@@ -52,7 +52,7 @@ class HALAMainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("HALA RT Verification Interface")
+        self.setWindowTitle("LEXIMETRA")
         self.setGeometry(100, 100, 1180, 820)
 
         self.audio_manager = AudioManager()

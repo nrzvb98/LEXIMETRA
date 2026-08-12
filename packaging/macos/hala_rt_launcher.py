@@ -1,4 +1,4 @@
-"""macOS PyInstaller launcher for HALA RT."""
+"""macOS PyInstaller launcher for LEXIMETRA."""
 
 import sys
 

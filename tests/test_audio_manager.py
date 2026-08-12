@@ -67,7 +67,7 @@ def test_prepend_existing_binary_dirs_keeps_bundled_before_path_and_fallback_aft
 
 
 def test_bundled_binary_dirs_includes_pyinstaller_internal_bin(tmp_path, monkeypatch):
-    executable = tmp_path / "HALA RT" / "HALA RT.exe"
+    executable = tmp_path / "LEXIMETRA" / "LEXIMETRA.exe"
     internal_dir = executable.parent / "_internal"
     executable.parent.mkdir()
     internal_dir.mkdir()
