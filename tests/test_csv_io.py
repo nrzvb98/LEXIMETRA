@@ -34,26 +34,34 @@ def test_write_and_load_output_csv(tmp_path):
 
 def test_failed_write_leaves_the_previous_csv_intact(tmp_path):
     path = tmp_path / "trial_hala_output.csv"
-    good = TrialData(
+    first = TrialData(
         trial_index=1,
         trial_start_global=0.0,
         trial_end_global=1.0,
         beep_timestamp_global=0.1,
     )
-    write_output_csv(path, [good])
-    original = path.read_text(encoding="utf-8")
-
-    doomed = _ExplodingTrial(
+    second = TrialData(
         trial_index=2,
         trial_start_global=1.0,
         trial_end_global=2.0,
         beep_timestamp_global=1.1,
     )
+    write_output_csv(path, [first, second])
+    original = path.read_text(encoding="utf-8")
+
+    # Fail on the *first* row, so a non-atomic write would leave a file holding
+    # only the header -- strictly less than the two rows already on disk.
+    doomed = _ExplodingTrial(
+        trial_index=1,
+        trial_start_global=0.0,
+        trial_end_global=1.0,
+        beep_timestamp_global=0.1,
+    )
     with pytest.raises(RuntimeError, match="disk full"):
-        write_output_csv(path, [good, doomed])
+        write_output_csv(path, [doomed, second])
 
     assert path.read_text(encoding="utf-8") == original
-    assert load_output_csv(path) == [good]
+    assert load_output_csv(path) == [first, second]
     # the temporary file must not be left behind next to the output
     assert [p.name for p in tmp_path.iterdir()] == [path.name]
 
