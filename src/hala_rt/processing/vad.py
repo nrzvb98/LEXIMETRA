@@ -8,7 +8,9 @@ speech ramp (soft-onset fix validated against the hand-edited ground truth).
 from __future__ import annotations
 
 import logging
+import os
 import warnings
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -20,20 +22,58 @@ logger = logging.getLogger("hala_rt.processing")
 
 _MODEL_CACHE = None
 
+SILERO_DIR_ENV = "HALA_SILERO_DIR"
+# A silero-vad checkout shipped inside the package, if one was placed there.
+# Absent in this repo (torch.hub's cache serves development); a host app that
+# must run offline can vendor one here instead of fetching from GitHub.
+_BUNDLED_SILERO_DIR = Path(__file__).resolve().parent / "silero"
+
+
+def _local_silero_dir():
+    """Return a local silero-vad checkout to load, or None to fetch it.
+
+    Checked in order: the ``HALA_SILERO_DIR`` override, then a copy bundled
+    inside the package. A bad override is an error rather than a silent
+    fallback -- a packaged app that quietly reaches for GitHub instead of the
+    copy it shipped would fail later, offline, in front of a user.
+    """
+    override = os.environ.get(SILERO_DIR_ENV)
+    if override:
+        candidate = Path(override)
+        if not (candidate / "hubconf.py").is_file():
+            raise RuntimeError(
+                f"{SILERO_DIR_ENV} is set to {candidate}, which is not a "
+                "silero-vad checkout (no hubconf.py)."
+            )
+        return candidate
+    if (_BUNDLED_SILERO_DIR / "hubconf.py").is_file():
+        return _BUNDLED_SILERO_DIR
+    return None
+
 
 def get_model():
     """Lazy-load Silero VAD once per process. Returns (model, get_speech_ts)."""
     global _MODEL_CACHE
     if _MODEL_CACHE is None:
+        local_dir = _local_silero_dir()
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            model, utils = torch.hub.load(
-                repo_or_dir='snakers4/silero-vad',
-                model='silero_vad',
-                force_reload=False,
-                onnx=False,
-                trust_repo=True,
-            )
+            if local_dir is not None:
+                logger.debug("Loading Silero VAD from %s", local_dir)
+                model, utils = torch.hub.load(
+                    repo_or_dir=str(local_dir),
+                    model='silero_vad',
+                    source='local',
+                    onnx=False,
+                )
+            else:
+                model, utils = torch.hub.load(
+                    repo_or_dir='snakers4/silero-vad',
+                    model='silero_vad',
+                    force_reload=False,
+                    onnx=False,
+                    trust_repo=True,
+                )
         (get_speech_ts, _, _, _, _) = utils
         _MODEL_CACHE = (model, get_speech_ts)
     return _MODEL_CACHE

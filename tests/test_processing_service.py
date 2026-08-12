@@ -104,6 +104,29 @@ def test_missing_dependency_reports_unavailable(monkeypatch):
     assert "processing" in outcome.message
 
 
+@pytest.mark.parametrize(
+    "error",
+    [
+        ImportError("No module named 'torch'"),
+        # A packaged build that pruned torch/bin raised exactly this.
+        RuntimeError("Unable to find torch_shm_manager at .../torch/bin/..."),
+        OSError("dlopen failed: libtorch_cpu.dylib"),
+    ],
+)
+def test_a_broken_install_is_reported_not_raised(audio, monkeypatch, error):
+    """Any import failure degrades to manual mode, whatever its type."""
+    def explode():
+        raise error
+
+    monkeypatch.setattr(processing_service, "processing_available", lambda: True)
+    monkeypatch.setattr(processing_service, "_load_process_audio", explode)
+
+    outcome = run_processing(audio)
+
+    assert outcome.status is ProcessingStatus.UNAVAILABLE
+    assert str(error) in outcome.message
+
+
 def test_success_puts_the_csv_beside_the_audio(audio, pipeline):
     pipeline(fake_pipeline(trial_count=4))
 

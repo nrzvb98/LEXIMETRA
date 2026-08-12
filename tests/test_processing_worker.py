@@ -88,6 +88,28 @@ def test_cancel_is_visible_to_the_service(qapp, service):
     assert calls["cancelled_after"] == ("vad", 1, 12)
 
 
+def test_an_unexpected_exception_never_escapes_run(qapp, monkeypatch):
+    """PyQt6 turns an exception escaping QThread.run() into a fatal abort.
+
+    A packaged build did exactly this: torch raised RuntimeError on import and
+    the whole application died rather than falling back to manual trial
+    cutting. The service is written not to raise; this is the backstop.
+    """
+    def explode(*args, **kwargs):
+        raise RuntimeError("Unable to find torch_shm_manager")
+
+    monkeypatch.setattr(processing_worker, "run_processing", explode)
+    worker = ProcessingWorker("/sessions/p001.m4a")
+    received = []
+    worker.completed.connect(received.append)
+
+    worker.run()
+
+    assert len(received) == 1
+    assert received[0].status is ProcessingStatus.ERROR
+    assert "torch_shm_manager" in received[0].message
+
+
 def test_output_path_is_passed_through(qapp, service):
     calls = service(ProcessingOutcome(status=ProcessingStatus.SUCCESS, message="done"))
     worker = ProcessingWorker("/sessions/p001.m4a", output_csv_path="/tmp/custom.csv")

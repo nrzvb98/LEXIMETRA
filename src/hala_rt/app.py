@@ -22,6 +22,7 @@ Click or drag the Global Timeline to place the trial end cursor, then click "Add
 Press Play or Spacebar to start playback.
 """
 
+import os
 import sys
 
 from PyQt6.QtWidgets import QApplication
@@ -34,6 +35,51 @@ from hala_rt.audio.manager import (
 )
 from hala_rt.data.processing_service import processing_available
 from hala_rt.ui.main_window import HALAMainWindow
+
+
+def self_test():
+    """Prove a packaged build can actually analyze, without opening a window.
+
+    Run by the macOS build script (``HALA_SELF_TEST=1``). Bundling breaks in
+    ways no source-tree test can see -- a pruned torch directory, data files
+    that did not get collected, a Silero copy that is missing -- and each of
+    those only surfaces when a user loads a recording. This turns that into a
+    build failure.
+    """
+    try:
+        from hala_rt.processing.vad import _local_silero_dir, get_model
+    except Exception as error:
+        print(f"SELF-TEST FAILED: cannot import the pipeline: "
+              f"{error.__class__.__name__}: {error}")
+        return 1
+
+    silero_dir = _local_silero_dir()
+    if silero_dir is None:
+        print("SELF-TEST FAILED: no bundled Silero VAD; the app would try to "
+              "download it from GitHub on first use.")
+        return 1
+
+    from hala_rt.processing import HalaConfig
+
+    missing = [
+        str(path)
+        for path in HalaConfig().resolved_template_paths()
+        if not path.is_file()
+    ]
+    if missing:
+        print(f"SELF-TEST FAILED: beep templates not bundled: {missing}")
+        return 1
+
+    try:
+        get_model()
+    except Exception as error:
+        print(f"SELF-TEST FAILED: cannot load the VAD model: "
+              f"{error.__class__.__name__}: {error}")
+        return 1
+
+    print(f"SELF-TEST OK: pipeline imports, beep templates present, "
+          f"Silero loads from {silero_dir}")
+    return 0
 
 
 def main():
@@ -75,11 +121,14 @@ def main():
         print("⚠ Automatic analysis unavailable - trials must be cut manually")
         print('  Install with: pip install -e ".[processing]"\n')
 
+    if os.environ.get("HALA_SELF_TEST") == "1":
+        return self_test()
+
     app = QApplication(sys.argv)
     window = HALAMainWindow()
     window.show()
-    sys.exit(app.exec())
+    return app.exec()
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

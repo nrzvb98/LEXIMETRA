@@ -60,6 +60,26 @@ if ! "${PYTHON_CMD[@]}" -m PyInstaller --version >/dev/null 2>&1; then
     exit 1
 fi
 
+# Automatic analysis is optional. It needs torch, for which there are no macOS
+# x86_64 wheels at the versions this pipeline pins, so an Intel build ships
+# without it and the app reports the capability as unavailable.
+if "${PYTHON_CMD[@]}" -c 'import torch' >/dev/null 2>&1; then
+    BUNDLE_PROCESSING=1
+    echo "Automatic analysis: bundling (torch found)."
+else
+    BUNDLE_PROCESSING=0
+    echo "Automatic analysis: NOT bundled (torch is not installed in ${VENV_PYTHON})."
+    echo "  The app will still build and run; trials must be cut manually."
+    echo "  To include it: ${VENV_PYTHON} -m pip install -e \".[processing]\""
+fi
+
+if [[ "${BUNDLE_PROCESSING}" == "1" && ! -f "${ROOT_DIR}/src/hala_rt/processing/silero/hubconf.py" ]]; then
+    echo "Silero VAD is not vendored, so the packaged app would try to download" >&2
+    echo "it from GitHub on first run." >&2
+    echo "Vendor it with: ${VENV_PYTHON} tools/vendor_silero.py --apply" >&2
+    exit 1
+fi
+
 VERSION="$("${PYTHON_CMD[@]}" -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
 ZIP_NAME="HALA_RT_${VERSION}_macos_${TARGET_ARCH}.zip"
 BUILD_DIR="${ROOT_DIR}/build/macos/${TARGET_ARCH}"
@@ -76,6 +96,22 @@ echo "Building ${APP_NAME} ${VERSION} for macOS ${TARGET_ARCH}..."
 rm -rf "${BUILD_DIR}" "${APP_PATH}" "${RAW_DIST_PATH}" "${ZIP_PATH}"
 mkdir -p "${BUILD_DIR}" "${DIST_DIR}"
 export PYINSTALLER_CONFIG_DIR="${BUILD_DIR}/pyinstaller_config"
+
+PROCESSING_ARGS=()
+if [[ "${BUNDLE_PROCESSING}" == "1" ]]; then
+    PROCESSING_SRC="${ROOT_DIR}/src/hala_rt/processing"
+    PROCESSING_ARGS=(
+        --collect-all "torch"
+        # Silero's utils_vad.py imports torchaudio and packaging, but it ships
+        # as data (torch.hub loads it by path), so PyInstaller never scans it
+        # for imports. Without these the app builds and then fails at analysis.
+        --collect-all "torchaudio"
+        --hidden-import "packaging.version"
+        --add-data "${PROCESSING_SRC}/templates:hala_rt/processing/templates"
+        --add-data "${PROCESSING_SRC}/silero:hala_rt/processing/silero"
+        --add-data "${PROCESSING_SRC}/VERSION:hala_rt/processing"
+    )
+fi
 
 "${PYTHON_CMD[@]}" -m PyInstaller \
     --noconfirm \
@@ -94,6 +130,7 @@ export PYINSTALLER_CONFIG_DIR="${BUILD_DIR}/pyinstaller_config"
     --collect-binaries "_soundfile_data" \
     --collect-data "_sounddevice_data" \
     --collect-binaries "_sounddevice_data" \
+    "${PROCESSING_ARGS[@]}" \
     "${LAUNCHER}"
 
 if [[ ! -d "${APP_PATH}" ]]; then
@@ -141,12 +178,64 @@ else
     echo "Skipping bundled FFmpeg because HALA_BUNDLE_FFMPEG=0."
 fi
 
+if [[ "${BUNDLE_PROCESSING}" == "1" ]]; then
+    # torch ships C++ headers and unit tests that are never used at runtime --
+    # roughly 70 MB of an archive users have to download. Pruned here rather
+    # than with --exclude-module: these are data, not modules, and excluding
+    # torch submodules risks import errors at runtime.
+    #
+    # torch/bin is deliberately NOT pruned: torch/__init__.py resolves
+    # torch_shm_manager there while importing, so removing it breaks every
+    # analysis with a RuntimeError. The self-test below exists to catch
+    # exactly this.
+    echo "Pruning bundled torch..."
+    SIZE_BEFORE="$(du -sm "${APP_PATH}" | cut -f1)"
+    # Each of these exists twice: real in one of Resources/Frameworks and a
+    # symlink in the other. Both paths must go -- deleting only the real one
+    # leaves a dangling symlink, and codesign --deep rejects the bundle with a
+    # bare "No such file or directory".
+    for relative in "torch/include" "torch/test"; do
+        for root in "${APP_RESOURCES_DIR}" "${APP_PATH}/Contents/Frameworks"; do
+            target="${root}/${relative}"
+            if [[ -e "${target}" || -L "${target}" ]]; then
+                rm -rf "${target}"
+            fi
+        done
+    done
+    if find "${APP_PATH}" -type l ! -exec test -e {} \; -print | grep -q .; then
+        echo "Pruning left dangling symlinks in the bundle:" >&2
+        find "${APP_PATH}" -type l ! -exec test -e {} \; -print >&2
+        exit 1
+    fi
+    SIZE_AFTER="$(du -sm "${APP_PATH}" | cut -f1)"
+    echo "  ${SIZE_BEFORE} MB -> ${SIZE_AFTER} MB"
+fi
+
 echo "Ad-hoc signing app bundle..."
 codesign --force --deep --sign - "${APP_PATH}"
 codesign --verify --deep --strict "${APP_PATH}"
 
+if [[ "${BUNDLE_PROCESSING}" == "1" ]]; then
+    # Run the packaged binary and make it import the pipeline and load the VAD
+    # model for real. Bundling fails in ways the source tests cannot see, and
+    # every one of them otherwise surfaces the first time a user loads a
+    # recording.
+    echo "Self-testing the packaged app..."
+    if ! PYTHONUNBUFFERED=1 HALA_SELF_TEST=1 "${APP_PATH}/Contents/MacOS/${APP_NAME}" 2>&1 | grep -q "^SELF-TEST OK"; then
+        echo "The packaged app cannot run an analysis. Output:" >&2
+        PYTHONUNBUFFERED=1 HALA_SELF_TEST=1 "${APP_PATH}/Contents/MacOS/${APP_NAME}" 2>&1 | tail -20 >&2
+        exit 1
+    fi
+    echo "  OK"
+fi
+
 echo "Creating distributable archive..."
 ditto -c -k --sequesterRsrc --keepParent "${APP_PATH}" "${ZIP_PATH}"
 
-echo "Built app: ${APP_PATH}"
-echo "Built archive: ${ZIP_PATH}"
+echo "Built app: ${APP_PATH} ($(du -sh "${APP_PATH}" | cut -f1))"
+echo "Built archive: ${ZIP_PATH} ($(du -sh "${ZIP_PATH}" | cut -f1))"
+if [[ "${BUNDLE_PROCESSING}" == "1" ]]; then
+    echo "Automatic analysis is bundled (Silero VAD included; no network needed)."
+else
+    echo "Automatic analysis is NOT bundled; trials must be cut manually."
+fi

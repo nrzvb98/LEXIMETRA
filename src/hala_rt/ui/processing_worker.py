@@ -11,7 +11,11 @@ responding" indicator, so it runs here instead.
 
 from PyQt6.QtCore import QThread, pyqtSignal
 
-from hala_rt.data.processing_service import run_processing
+from hala_rt.data.processing_service import (
+    ProcessingOutcome,
+    ProcessingStatus,
+    run_processing,
+)
 
 
 class ProcessingWorker(QThread):
@@ -42,10 +46,22 @@ class ProcessingWorker(QThread):
         self._cancel_requested = True
 
     def run(self):
-        outcome = run_processing(
-            self._audio_path,
-            on_progress=self.progress.emit,
-            should_cancel=lambda: self._cancel_requested,
-            output_csv_path=self._output_csv_path,
-        )
+        # Nothing may escape this method. PyQt6 routes an unhandled exception
+        # in a QThread.run() to qFatal, which aborts the whole application --
+        # observed for real when a packaged build raised RuntimeError while
+        # importing torch. The service is written not to raise, so this is a
+        # backstop, but it is the difference between "analysis failed, cut
+        # trials by hand" and the user's window vanishing mid-session.
+        try:
+            outcome = run_processing(
+                self._audio_path,
+                on_progress=self.progress.emit,
+                should_cancel=lambda: self._cancel_requested,
+                output_csv_path=self._output_csv_path,
+            )
+        except BaseException as error:  # noqa: BLE001
+            outcome = ProcessingOutcome(
+                status=ProcessingStatus.ERROR,
+                message=f"{error.__class__.__name__}: {error}",
+            )
         self.completed.emit(outcome)

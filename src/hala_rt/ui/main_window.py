@@ -1,3 +1,4 @@
+import time
 from dataclasses import replace
 from pathlib import Path
 
@@ -447,6 +448,20 @@ Output CSV: {output_path}"""
             return VAD_PROGRESS_END, "Writing results…"
         return 0, "Processing…"
 
+    @staticmethod
+    def _elapsed_suffix(seconds):
+        """A minimal ' · 12s' tail for the progress label.
+
+        Beep detection runs for several seconds without reporting progress, so
+        without a moving clock the dialog reads as hung on a long recording.
+        """
+        seconds = int(seconds)
+        if seconds < 1:
+            return ""
+        if seconds < 60:
+            return f" · {seconds}s"
+        return f" · {seconds // 60}:{seconds % 60:02d}"
+
     def _confirm_reprocess(self):
         """Ask whether to re-run analysis over an existing output CSV.
 
@@ -483,23 +498,38 @@ Output CSV: {output_path}"""
         worker = ProcessingWorker(file_path, output_csv_path=self.output_csv_path)
         loop = QEventLoop()
         completed = {}
+        started = time.monotonic()
+        stage_text = ["Starting analysis…"]
+
+        def refresh_label():
+            progress.setLabelText(
+                stage_text[0] + self._elapsed_suffix(time.monotonic() - started)
+            )
 
         def on_progress(stage, done, total):
             value, text = self._processing_progress(stage, done, total)
+            stage_text[0] = text
             progress.setValue(value)
-            progress.setLabelText(text)
+            refresh_label()
 
         def on_completed(outcome):
             completed["outcome"] = outcome
             loop.quit()
 
+        # Keeps the clock moving through stages that report no progress.
+        ticker = QTimer(self)
+        ticker.setInterval(1000)
+        ticker.timeout.connect(refresh_label)
+
         worker.progress.connect(on_progress)
         worker.completed.connect(on_completed)
         progress.canceled.connect(worker.cancel)
 
+        ticker.start()
         worker.start()
         loop.exec()
         worker.wait()
+        ticker.stop()
         progress.close()
 
         return completed.get("outcome")

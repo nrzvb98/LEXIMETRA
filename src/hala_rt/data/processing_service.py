@@ -137,10 +137,14 @@ def run_processing(
 
     try:
         process_audio = _load_process_audio()
-    except ImportError as error:
+    except Exception as error:  # noqa: BLE001 - see below
+        # Deliberately broader than ImportError. A damaged or incompletely
+        # packaged torch fails at import with its own exception types (a build
+        # that pruned torch/bin raised RuntimeError from torch/__init__.py),
+        # and none of those should reach the caller as an exception.
         return ProcessingOutcome(
             status=ProcessingStatus.UNAVAILABLE,
-            message=f"Automatic processing could not be loaded: {error}",
+            message=f"Automatic analysis could not be loaded: {error}",
         )
 
     def progress(stage, done, total):

@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hala-rt"
-version = "0.1.0"
-description = "Manual trial-end cutting and reaction-time verification interface"
+version = "0.2.0"
+description = "Automatic trial analysis and reaction-time verification interface"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -42,7 +42,17 @@ hala-rt = "hala_rt.app:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-"hala_rt.processing" = ["templates/*.wav", "VERSION"]
+"hala_rt.processing" = [
+    "templates/*.wav",
+    "VERSION",
+    # Bundled Silero VAD, so the model loads locally instead of being fetched
+    # from GitHub on first run. Vendored by tools/vendor_silero.py.
+    "silero/hubconf.py",
+    "silero/LICENSE",
+    "silero/VENDORED.md",
+    "silero/src/silero_vad/*.py",
+    "silero/src/silero_vad/data/*.jit",
+]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
