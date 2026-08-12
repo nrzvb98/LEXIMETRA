@@ -1,7 +1,7 @@
 from dataclasses import replace
 from pathlib import Path
 
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import Qt, QEventLoop, QTimer
 from PyQt6.QtGui import QFontMetrics
 from PyQt6.QtWidgets import (
     QApplication,
@@ -15,6 +15,7 @@ from PyQt6.QtWidgets import (
 from hala_rt.audio.manager import AudioManager
 from hala_rt.data.csv_io import load_output_csv, write_output_csv
 from hala_rt.data.output_paths import default_output_path, next_edited_output_path
+from hala_rt.data.processing_service import ProcessingStatus, processing_available
 from hala_rt.data.trial_data import (
     BOOLEAN_COLUMNS,
     CSV_COLUMNS,
@@ -31,12 +32,18 @@ from hala_rt.data.trial_data import (
 )
 from hala_rt.ui import theme
 from hala_rt.ui.main_window_ui import build_ui
+from hala_rt.ui.processing_worker import ProcessingWorker
 from hala_rt.ui.table_columns import COLUMN_LABELS, resize_table_columns
 
 
 MIN_TRIAL_DURATION_SECONDS = 0.01
 EPSILON_SECONDS = 1e-6
 MAX_REPORTED_ADJUSTMENTS = 10
+
+# Percentage of the processing progress bar given to the VAD pass, which
+# dominates the wall clock on a real session.
+VAD_PROGRESS_START = 20
+VAD_PROGRESS_END = 95
 
 
 class HALAMainWindow(QMainWindow):
@@ -417,6 +424,120 @@ Output CSV: {output_path}"""
             expected_start = trial.trial_end_global
         return adjusted
 
+    @staticmethod
+    def _processing_progress(stage, done, total):
+        """Map a pipeline stage onto a bar percentage and a label.
+
+        The pipeline reports four stages, but they are nothing like equal in
+        duration: VAD runs per trial and dominates a real session, so it gets
+        most of the bar and the only moving count.
+        """
+        if stage == "load":
+            return 5, "Loading audio…"
+        if stage == "slices":
+            return VAD_PROGRESS_START, f"Detected {total} trial(s). Slicing…"
+        if stage == "vad":
+            span = VAD_PROGRESS_END - VAD_PROGRESS_START
+            fraction = (done / total) if total else 0
+            return (
+                VAD_PROGRESS_START + int(span * fraction),
+                f"Analyzing trial {done} of {total}…",
+            )
+        if stage == "export":
+            return VAD_PROGRESS_END, "Writing results…"
+        return 0, "Processing…"
+
+    def _confirm_reprocess(self):
+        """Ask whether to re-run analysis over an existing output CSV.
+
+        Two choices, not three: the app has no separate "load CSV" action, so a
+        cancel here would leave the user with audio loaded and no way back to
+        the CSV short of reloading the file.
+        """
+        response = QMessageBox.question(
+            self,
+            "Output CSV Already Exists",
+            f"This recording already has an output CSV:\n{self.output_csv_path}\n\n"
+            "Analyze the recording again?\n\n"
+            "Yes — run automatic analysis (the existing CSV is backed up first)\n"
+            "No — keep the existing CSV",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        return response == QMessageBox.StandardButton.Yes
+
+    def _run_auto_processing(self, file_path):
+        """Run the pipeline behind a modal progress dialog; return the outcome.
+
+        The work happens on a worker thread and this blocks on a local event
+        loop, so the window keeps repainting and the Cancel button stays live.
+        """
+        progress = QProgressDialog("Starting analysis…", "Cancel", 0, 100, self)
+        progress.setWindowTitle("Analyzing Recording")
+        progress.setWindowModality(Qt.WindowModality.WindowModal)
+        progress.setMinimumDuration(0)
+        progress.setAutoClose(False)
+        progress.setAutoReset(False)
+        progress.setValue(0)
+
+        worker = ProcessingWorker(file_path, output_csv_path=self.output_csv_path)
+        loop = QEventLoop()
+        completed = {}
+
+        def on_progress(stage, done, total):
+            value, text = self._processing_progress(stage, done, total)
+            progress.setValue(value)
+            progress.setLabelText(text)
+
+        def on_completed(outcome):
+            completed["outcome"] = outcome
+            loop.quit()
+
+        worker.progress.connect(on_progress)
+        worker.completed.connect(on_completed)
+        progress.canceled.connect(worker.cancel)
+
+        worker.start()
+        loop.exec()
+        worker.wait()
+        progress.close()
+
+        return completed.get("outcome")
+
+    def _auto_process_if_needed(self, file_path):
+        """Produce the output CSV for a freshly loaded recording, if we can.
+
+        Returns a ``(status_text, tone)`` pair describing what happened, or
+        ``None`` when nothing was attempted and the normal CSV-loading status
+        should speak instead.
+
+        Every failure here is reported and then stepped over: automatic
+        analysis is a convenience, and the manual trial-cutting workflow is
+        always still available.
+        """
+        if not processing_available():
+            return None
+
+        csv_exists = bool(self.output_csv_path) and self.output_csv_path.exists()
+        if csv_exists and not self._confirm_reprocess():
+            return None
+
+        outcome = self._run_auto_processing(file_path)
+        if outcome is None:
+            return None
+
+        if outcome.succeeded:
+            text = f"Analyzed {outcome.trial_count} trial(s) automatically."
+            if outcome.backup_path:
+                text += f" Previous CSV kept as {outcome.backup_path.name}."
+            return text, "success"
+
+        if outcome.status is ProcessingStatus.CANCELLED:
+            return "Analysis cancelled. Create trials manually.", "warning"
+        if outcome.status is ProcessingStatus.NO_BEEPS:
+            return "No beeps detected. Create trials manually.", "warning"
+        return f"Automatic analysis failed: {outcome.message}", "error"
+
     def _refresh_trial_views(self, select_index=None):
         self._sort_and_renumber_trials()
         self._refresh_global_waveform_ranges()
@@ -471,7 +592,14 @@ Output CSV: {output_path}"""
 
         file_name = Path(file_path).name
         self.info_text.setText(self._format_audio_info(file_name))
+
+        processing_status = self._auto_process_if_needed(file_path)
         status_text, status_tone = self._load_trials_for_audio()
+        # A CSV that exists but will not load is the more urgent thing to say,
+        # so it outranks whatever the analysis reported.
+        if processing_status is not None and status_tone != "error":
+            status_text, status_tone = processing_status
+
         self._refresh_trial_views(0 if self.session_data else None)
 
         self._set_dirty(False)

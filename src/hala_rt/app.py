@@ -32,6 +32,7 @@ from hala_rt.audio.manager import (
     SOUNDFILE_AVAILABLE,
     AudioManager,
 )
+from hala_rt.data.processing_service import processing_available
 from hala_rt.ui.main_window import HALAMainWindow
 
 
@@ -66,6 +67,13 @@ def main():
         print("  Install FFmpeg from: https://ffmpeg.org/download.html\n")
     else:
         print("✓ FFmpeg found - M4A support enabled\n")
+
+    # Check automatic processing (optional; the manual workflow never needs it)
+    if processing_available():
+        print("✓ Automatic analysis available - loading audio will detect trials\n")
+    else:
+        print("⚠ Automatic analysis unavailable - trials must be cut manually")
+        print('  Install with: pip install -e ".[processing]"\n')
 
     app = QApplication(sys.argv)
     window = HALAMainWindow()

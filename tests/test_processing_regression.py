@@ -129,6 +129,36 @@ def test_service_places_real_pipeline_output(tmp_path):
     assert {stage for stage, _, _ in stages} == {"load", "slices", "vad", "export"}
 
 
+def test_loading_audio_analyzes_it_end_to_end(qapp, tmp_path, monkeypatch):
+    """The whole feature, unstubbed: load a recording, get verified trials.
+
+    Everything else mocks something — the pipeline, the worker, or the
+    decoder. This drives the real controller path over the real worker thread,
+    event loop, and pipeline, which is the only place their interaction is
+    actually exercised.
+    """
+    from hala_rt.ui.main_window import HALAMainWindow
+
+    audio = tmp_path / "session.m4a"
+    audio.write_bytes(SAMPLE_AUDIO.read_bytes())
+
+    window = HALAMainWindow()
+    try:
+        assert window._load_audio_file(audio) is True
+
+        assert len(window.session_data) == 12
+        assert "Analyzed 12 trial(s)" in window.status_label.text()
+        assert (tmp_path / "session_hala_output.csv").is_file()
+        assert len(list((tmp_path / "session_hala" / "HALA_Slices").glob("*.wav"))) == 12
+        assert not window.has_unsaved_changes
+
+        # The trials are usable: the table is populated and a trial is selected.
+        assert window.trial_table.rowCount() >= 12
+        assert window.current_trial_index == 0
+    finally:
+        window.close()
+
+
 def test_output_csv_loads_through_the_app(pipeline_output):
     """The pipeline's export must satisfy the app's own loader and validation.
 
