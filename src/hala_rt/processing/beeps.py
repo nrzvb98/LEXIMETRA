@@ -9,8 +9,12 @@ Two detectors coexist on purpose (same as the notebook):
   best match.
 - The legacy fixed-band detector (`detect_beeps_legacy`) produces the beep
   timestamps written to the final CSVs (beep_timestamp_global / trial
-  windows), exactly as the notebook's final-CSV cell always has. The two
-  detectors must agree on beep count for the outputs to align.
+  windows), exactly as the notebook's final-CSV cell always has.
+
+`pair_beeps_to_slices` reconciles the two by beep START time. They used to be
+joined on trial_name — i.e. by detection order — so any disagreement silently
+misaligned every subsequent row (15 of 96 corpus recordings, drifting up to
+69 s). The detectors no longer need to agree on beep count.
 """
 from __future__ import annotations
 
@@ -171,6 +175,159 @@ def slice_trials(y, sr, valid_beeps, slice_dir, cfg: HalaConfig):
 
     logger.info("Saved %d trial slices to %s", len(slice_files), slice_dir)
     return slice_files
+
+
+def tone_match_scores(y, sr, cfg: HalaConfig, start_samples) -> list[float]:
+    """Best phase-coherent template match at each start sample (audit only).
+
+    Same measure the template detector gates on, recomputed for events it did
+    not accept, so the pairing report can show how close a dropped legacy
+    detection was to `BEEP_MATCH_THRESHOLD`.
+    """
+    if not len(start_samples):
+        return []
+
+    best = [0.0] * len(start_samples)
+    for tpl_path in cfg.resolved_template_paths():
+        if not os.path.isfile(tpl_path):
+            continue
+        tpl, tpl_freq, _ = analyze_beep_template(tpl_path, target_sr=sr)
+        sos_beep = scipy.signal.butter(
+            2,
+            [tpl_freq - cfg.BEEP_BAND_HALF_WIDTH_HZ, tpl_freq + cfg.BEEP_BAND_HALF_WIDTH_HZ],
+            'bandpass', fs=sr, output='sos',
+        )
+        y_beep = scipy.signal.sosfiltfilt(sos_beep, y)
+        tpl_analytic = scipy.signal.hilbert(scipy.signal.sosfiltfilt(sos_beep, tpl))
+        tpl_norm = np.linalg.norm(tpl_analytic)
+
+        for i, s in enumerate(start_samples):
+            seg = y_beep[int(s):int(s) + len(tpl_analytic)]
+            if len(seg) < len(tpl_analytic):
+                continue
+            z = scipy.signal.hilbert(seg)
+            match = float(np.abs(np.vdot(z, tpl_analytic)) / (np.linalg.norm(z) * tpl_norm + 1e-12))
+            best[i] = max(best[i], match)
+    return best
+
+
+def pair_beeps_to_slices(valid_beeps, df_legacy: pd.DataFrame, sr, cfg: HalaConfig):
+    """Match legacy beep timings to trial slices by START time, not by index.
+
+    The template detector defines the trial set — one slice per accepted beep,
+    `Trial_001..N` in time order. The legacy detector numbers its own rows
+    `Trial_001..M` in *its* detection order. Joining those two on trial_name
+    (as the notebook always did) pairs the k-th detection of one with the k-th
+    of the other, so a single disagreement silently staples one beep's
+    timestamp to a different beep's speech for the rest of the recording.
+
+    Here every slice keeps its own beep. Returns
+    ``(df_timings, anomalies)`` where df_timings has one row per slice in slice
+    order, carrying the matched legacy values verbatim, and anomalies is a list
+    of dicts describing every event that did not pair one-to-one.
+
+    Legacy rows with no slice are dropped: the template detector is the
+    authority on what counts as a trial, and these events were not accepted
+    into it. (They are not necessarily noise — many are the second lobe of a
+    double-lobed beep — hence the tone-match value in the anomaly record.)
+    """
+    tol_ms = float(cfg.BEEP_PAIR_TOLERANCE_MS)
+    tpl_start_ms = np.array([s / sr * 1000 for s, _ in valid_beeps], dtype=float)
+    tpl_end_ms = np.array([e / sr * 1000 for _, e in valid_beeps], dtype=float)
+    leg_start_ms = df_legacy['beep_start_ms'].to_numpy(dtype=float)
+
+    # The tolerance is only safe if it cannot reach a neighbouring beep. Check
+    # that against this recording rather than trusting the constant.
+    gaps = [np.diff(a) for a in (tpl_start_ms, leg_start_ms) if len(a) > 1]
+    min_gap_ms = float(min(g.min() for g in gaps)) if gaps else float('inf')
+    if tol_ms >= 0.5 * min_gap_ms:
+        raise RuntimeError(
+            f"Beep pairing tolerance {tol_ms:.1f} ms is not safely below half the smallest "
+            f"beep-to-beep gap in this recording ({min_gap_ms:.1f} ms). Pairing would be "
+            f"ambiguous; lower BEEP_PAIR_TOLERANCE_MS or fix beep detection first."
+        )
+
+    # Monotone two-pointer merge: advance whichever sequence is behind. This
+    # gives a strictly increasing, one-to-one match by construction — a plain
+    # nearest-neighbour argmin does not (in 520 it maps 12 slices onto legacy
+    # rows already claimed by their neighbours).
+    matched_legacy: list[int | None] = [None] * len(tpl_start_ms)
+    unmatched_legacy: list[int] = []
+    i = j = 0
+    while i < len(tpl_start_ms) and j < len(leg_start_ms):
+        delta = leg_start_ms[j] - tpl_start_ms[i]
+        if abs(delta) <= tol_ms:
+            matched_legacy[i] = j
+            i += 1
+            j += 1
+        elif delta < 0:
+            unmatched_legacy.append(j)
+            j += 1
+        else:
+            i += 1
+    unmatched_legacy.extend(range(j, len(leg_start_ms)))
+
+    unmatched_slices = [k for k, m in enumerate(matched_legacy) if m is None]
+    if unmatched_slices and not cfg.ALLOW_TEMPLATE_BEEP_FALLBACK:
+        names = ", ".join(f"Trial_{k + 1:03d}" for k in unmatched_slices[:10])
+        more = f" (+{len(unmatched_slices) - 10} more)" if len(unmatched_slices) > 10 else ""
+        raise RuntimeError(
+            f"{len(unmatched_slices)} trial slice(s) have no legacy beep within {tol_ms:.1f} ms: "
+            f"{names}{more}. Set ALLOW_TEMPLATE_BEEP_FALLBACK to use the slice's own beep timing."
+        )
+
+    rows = []
+    for k, legacy_idx in enumerate(matched_legacy):
+        trial_name = f"Trial_{k + 1:03d}"
+        if legacy_idx is None:
+            # The template beep IS the slice boundary, so this timing is exact
+            # by construction for the downstream beep_end -> speech arithmetic.
+            rows.append({
+                'trial_name': trial_name,
+                'beep_timestamp_global': tpl_start_ms[k] / 1000,
+                'beep_start_ms': tpl_start_ms[k],
+                'beep_end_ms': tpl_end_ms[k],
+            })
+        else:
+            # Carried verbatim: recomputing (e.g. timestamp * 1000) can differ
+            # in the last ULP and break the byte-identical regression gate.
+            src = df_legacy.iloc[legacy_idx]
+            rows.append({
+                'trial_name': trial_name,
+                'beep_timestamp_global': src['beep_timestamp_global'],
+                'beep_start_ms': src['beep_start_ms'],
+                'beep_end_ms': src['beep_end_ms'],
+            })
+
+    anomalies = [{
+        'kind': 'filled_from_template',
+        'trial_name': f"Trial_{k + 1:03d}",
+        'time_s': tpl_start_ms[k] / 1000,
+        'duration_ms': tpl_end_ms[k] - tpl_start_ms[k],
+        'detail': 'legacy detector found no beep here; used the slice\'s own beep timing',
+    } for k in unmatched_slices]
+
+    for j in unmatched_legacy:
+        start_ms = leg_start_ms[j]
+        nearest = float(np.min(np.abs(tpl_start_ms - start_ms))) if len(tpl_start_ms) else float('nan')
+        anomalies.append({
+            'kind': 'dropped_legacy_beep',
+            'trial_name': '',
+            'time_s': start_ms / 1000,
+            'duration_ms': float(df_legacy.iloc[j]['beep_end_ms']) - start_ms,
+            'detail': f'not accepted by the template detector; {nearest:.0f} ms from the nearest slice beep',
+        })
+
+    if anomalies:
+        logger.warning(
+            "Beep pairing: %d slice(s) filled from template timing, %d legacy detection(s) dropped "
+            "(template %d, legacy %d).",
+            len(unmatched_slices), len(unmatched_legacy), len(tpl_start_ms), len(leg_start_ms),
+        )
+    else:
+        logger.info("Beep pairing: %d beeps matched one-to-one.", len(tpl_start_ms))
+
+    return pd.DataFrame(rows), anomalies
 
 
 def detect_beeps_legacy(y, sr, cfg: HalaConfig) -> pd.DataFrame:

@@ -34,6 +34,19 @@ class HalaConfig:
     LEGACY_BEEP_BAND_HI_HZ: float = 1100
     LEGACY_BEEP_MIN_DUR_S: float = 0.09
 
+    # --- Pairing the two detectors ---
+    # The two detectors are matched by beep START time, not by detection order.
+    # Measured over the 96-recording corpus: for the same physical beep their
+    # starts agree to <=0.125 ms (2 samples), while the nearest *neighbouring*
+    # beep is >=89 ms away — a ~700x separation, so 5 ms is generous. The
+    # tolerance is additionally guarded at runtime against half the smallest
+    # beep-to-beep gap in the file being processed.
+    BEEP_PAIR_TOLERANCE_MS: float = 5.0
+    # When the legacy detector missed a beep the template detector accepted,
+    # fall back to the template beep's own timing for that trial (recorded as
+    # an anomaly) instead of failing. 13 of 96 corpus recordings need this.
+    ALLOW_TEMPLATE_BEEP_FALLBACK: bool = True
+
     # --- Slicing ---
     SLICE_TAIL_S: float = 3.0                 # window after the last beep
 

@@ -9,6 +9,7 @@ Outputs written to `output_dir` (default: current directory):
     <stem>_HALA_Full_Analysis_Results.csv absolute timings, one row per trial
     <stem>_HALA_Analysis_Results.csv      RT/hesitation summary subset
     <stem>_hala_output.csv                software-format export
+    <stem>_beep_pairing_report.csv        only if some beep did not pair 1:1
 
 The pre-existing HALA_Slices folder under `output_dir` is removed before
 slicing (it is a generated artifact of this pipeline); nothing else is deleted.
@@ -17,7 +18,7 @@ from __future__ import annotations
 
 import logging
 import shutil
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import pandas as pd
@@ -53,7 +54,8 @@ class HalaResult:
     df_analysis: pd.DataFrame    # summary subset (Analysis CSV)
     df_output: pd.DataFrame      # software-format export (hala_output CSV)
     slice_dir: Path
-    csv_paths: dict[str, Path]   # keys: full, analysis, output (empty if not written)
+    csv_paths: dict[str, Path]   # keys: full, analysis, output (+ pairing_report), empty if not written
+    beep_anomalies: list[dict] = field(default_factory=list)  # beeps that did not pair 1:1
 
 
 def process_audio(
@@ -124,8 +126,19 @@ def process_audio(
     df_results = pd.DataFrame(results)
     df_speech_hesitation_rel = pd.DataFrame(relative_rows)
 
-    # 4. Legacy fixed-band beep timings anchor the final CSV, then merge.
-    df_beep_timings = beeps_mod.detect_beeps_legacy(y, sr, cfg)
+    # 4. Legacy fixed-band beep timings, matched to each slice by beep START
+    # time rather than by detection order, then merged onto the trial results.
+    # Rows are anchored to slices, so a detector disagreement can no longer
+    # shift beeps against speech (see beeps.pair_beeps_to_slices).
+    df_legacy = beeps_mod.detect_beeps_legacy(y, sr, cfg)
+    df_beep_timings, beep_anomalies = beeps_mod.pair_beeps_to_slices(valid_beeps, df_legacy, sr, cfg)
+    if beep_anomalies:
+        scores = beeps_mod.tone_match_scores(
+            y, sr, cfg, [int(a['time_s'] * sr) for a in beep_anomalies]
+        )
+        for anomaly, score in zip(beep_anomalies, scores):
+            anomaly['tone_match'] = round(score, 3)
+
     df_combined_timings = pd.merge(df_beep_timings, df_speech_hesitation_rel, on='trial_name', how='left')
     df_final_results = pd.merge(df_combined_timings, df_results, on='trial_name', how='left')
 
@@ -189,6 +202,14 @@ def process_audio(
         csv_paths = {"full": full_path, "analysis": analysis_path, "output": output_path}
         df_output = pd.read_csv(output_path)
         logger.info("Wrote %s, %s, %s", full_path.name, analysis_path.name, output_path.name)
+
+        # Sidecar, written only when something did not pair 1:1 — the three
+        # CSVs above keep their schema so clean recordings stay byte-identical.
+        if beep_anomalies:
+            report_path = output_dir / f"{stem}_beep_pairing_report.csv"
+            pd.DataFrame(beep_anomalies).to_csv(report_path, index=False)
+            csv_paths["pairing_report"] = report_path
+            logger.warning("Wrote %s (%d anomalies)", report_path.name, len(beep_anomalies))
     else:
         from .export import build_hala_software_export
         df_output = build_hala_software_export(
@@ -206,4 +227,5 @@ def process_audio(
         df_output=df_output,
         slice_dir=slice_dir,
         csv_paths=csv_paths,
+        beep_anomalies=beep_anomalies,
     )
