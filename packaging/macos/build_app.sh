@@ -89,7 +89,7 @@ RAW_DIST_PATH="${DIST_DIR}/${APP_NAME}"
 ZIP_PATH="${DIST_DIR}/${ZIP_NAME}"
 LAUNCHER="${SCRIPT_DIR}/hala_rt_launcher.py"
 APP_RESOURCES_DIR="${APP_PATH}/Contents/Resources"
-APP_ICON="${SCRIPT_DIR}/icons/hala-rt-icon.icns"
+APP_ICON="${SCRIPT_DIR}/icons/leximetra-icon.icns"
 
 echo "Building ${APP_NAME} ${VERSION} for macOS ${TARGET_ARCH}..."
 

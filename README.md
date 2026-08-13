@@ -125,6 +125,21 @@ In an MSYS2 MINGW64 shell, the expected build tools are:
 pacman -S --needed mingw-w64-x86_64-gcc make diffutils tar xz
 ```
 
+## App icon
+
+Both builds read generated icon files, not the source artwork. After changing
+`packaging/icons/leximetra-icon-source.png`, regenerate them:
+
+```bash
+python packaging/make_icons.py
+```
+
+That writes `packaging/macos/icons/leximetra-icon.icns` (the ten sizes macOS
+asks for, on Apple's Big Sur grid) and `packaging/windows/icons/leximetra-icon.ico`
+(seven sizes, edge to edge). The script cuts the artwork out against
+transparency; source PNGs painted on an opaque background show black corners in
+the Dock if used directly.
+
 ## Usage
 
 ```bash

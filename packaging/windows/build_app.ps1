@@ -15,7 +15,7 @@ $DistDir = Join-Path $RootDir "dist"
 $BuildDir = Join-Path $RootDir "build\windows\$TargetArch"
 $AppDir = Join-Path $DistDir $AppName
 $Launcher = Join-Path $ScriptDir "hala_rt_launcher.py"
-$IconPath = Join-Path $ScriptDir "icons\hala-rt-icon.ico"
+$IconPath = Join-Path $ScriptDir "icons\leximetra-icon.ico"
 $FFmpegPrefix = if ($env:FFMPEG_PREFIX) {
     $env:FFMPEG_PREFIX
 } else {
