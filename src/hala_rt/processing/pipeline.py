@@ -94,6 +94,13 @@ def process_audio(
     valid_beeps = beeps_mod.detect_beeps_template_matched(y, sr, cfg)
     if not valid_beeps:
         raise RuntimeError(f"No beeps detected in {audio_path.name}")
+
+    # Recover beeps the trigger floor clipped below the duration gate. Additive:
+    # returns nothing unless a rejected fragment re-measures into a real beep.
+    rescued_beeps, rescue_anomalies = beeps_mod.rescue_short_beeps(y, sr, valid_beeps, cfg)
+    if rescued_beeps:
+        valid_beeps = sorted(valid_beeps + rescued_beeps)
+
     slice_dir = output_dir / "HALA_Slices"
     if slice_dir.exists():
         shutil.rmtree(slice_dir)
@@ -138,6 +145,25 @@ def process_audio(
         )
         for anomaly, score in zip(beep_anomalies, scores):
             anomaly['tone_match'] = round(score, 3)
+
+    if rescue_anomalies:
+        # Number the rescued beeps now that trials are fixed, then drop the
+        # pairing's "filled_from_template" row for each: the legacy detector was
+        # blind to these for the same reason the duration gate was, so the fill
+        # is implied by the rescue and two rows for one beep only confuse.
+        # Matched on trial index, never on float time — the fill's time_s is
+        # derived via ms and is not bit-equal to s/sr.
+        rescued_trials = set()
+        for anomaly, beep in zip(rescue_anomalies, rescued_beeps):
+            index = valid_beeps.index(beep)
+            anomaly['trial_name'] = f"Trial_{index + 1:03d}"
+            rescued_trials.add(anomaly['trial_name'])
+        beep_anomalies = [
+            a for a in beep_anomalies
+            if not (a['kind'] == 'filled_from_template' and a['trial_name'] in rescued_trials)
+        ]
+        beep_anomalies.extend(rescue_anomalies)
+        beep_anomalies.sort(key=lambda a: a['time_s'])
 
     df_combined_timings = pd.merge(df_beep_timings, df_speech_hesitation_rel, on='trial_name', how='left')
     df_final_results = pd.merge(df_combined_timings, df_results, on='trial_name', how='left')

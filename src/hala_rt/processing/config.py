@@ -34,6 +34,32 @@ class HalaConfig:
     LEGACY_BEEP_BAND_HI_HZ: float = 1100
     LEGACY_BEEP_MIN_DUR_S: float = 0.09
 
+    # --- Rescuing beeps the duration gate threw away ---
+    # The trigger above has a hard-coded 0.005 absolute floor. On quiet
+    # recordings that floor sits INSIDE the beep envelope, so a ~100 ms beep
+    # only pokes above it for 4-16 ms and is rejected as too short - even at
+    # tone-match 0.87-0.97. Lowering the floor globally is not an option: it
+    # decides the trigger on 12 of 95 corpus recordings, 6 of which are healthy
+    # (r 0.90-0.98), and it would shift every beep boundary on them.
+    #
+    # Instead a second pass slides the template along the recording and asks
+    # "how well does a beep fit HERE", which is amplitude-invariant, and keeps
+    # the peaks that fall where the detector found nothing. Measured against a
+    # detector that measures every beep this way (probed, rejected): uniform
+    # peak-relative measurement splits double-lobed beeps into two, adding a
+    # spurious 18th beep to the 17-trial ground-truth recording and 9 to 523,
+    # while losing 6 on 611. Keeping the detector's own beeps untouched and
+    # only filling its gaps avoids that entirely.
+    BEEP_RESCUE_ENABLED: bool = True
+    # Minimum normalised template match for a rescued beep. Real beeps score
+    # 0.96+, the quiet ones this recovers 0.85-0.98, speech below 0.4.
+    BEEP_RESCUE_MATCH_MIN: float = 0.85
+    BEEP_RESCUE_MIN_GAP_S: float = 1.5        # rescued beep must clear every other beep by this
+    # If existing beeps are ever closer than this the recording is already
+    # over-detecting (double lobes counted as separate beeps); rescuing there
+    # only adds more. Skip the whole file.
+    BEEP_RESCUE_MIN_EXISTING_GAP_S: float = 1.0
+
     # --- Pairing the two detectors ---
     # The two detectors are matched by beep START time, not by detection order.
     # Measured over the 96-recording corpus: for the same physical beep their

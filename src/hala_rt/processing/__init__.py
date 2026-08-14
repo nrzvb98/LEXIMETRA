@@ -11,6 +11,6 @@ from .config import HalaConfig
 from .pipeline import HalaResult, process_audio
 from .vad import get_model
 
-__version__ = "1.0.0"
+__version__ = "1.2.0"
 
 __all__ = ["HalaConfig", "HalaResult", "process_audio", "get_model", "__version__"]

@@ -15,6 +15,13 @@ Two detectors coexist on purpose (same as the notebook):
 joined on trial_name — i.e. by detection order — so any disagreement silently
 misaligned every subsequent row (15 of 96 corpus recordings, drifting up to
 69 s). The detectors no longer need to agree on beep count.
+
+`rescue_short_beeps` runs after the template detector and fills the gaps it
+left: on quiet recordings the trigger's hard-coded floor clips a beep to a few
+milliseconds, so the duration gate discards it despite a near-perfect tone
+match. The rescue slides the template along the recording instead, which is
+amplitude-invariant, and keeps peaks that land where the detector found
+nothing.
 """
 from __future__ import annotations
 
@@ -176,6 +183,123 @@ def slice_trials(y, sr, valid_beeps, slice_dir, cfg: HalaConfig):
     logger.info("Saved %d trial slices to %s", len(slice_files), slice_dir)
     return slice_files
 
+
+def _match_profile(y, sr, cfg: HalaConfig, tpl_path):
+    """Normalised template match at EVERY sample offset, computed exactly.
+
+    match(s) = |<z_s, tpl>| / (||z_s|| * ||tpl||) for the analytic, band-limited
+    signal — the same phase-coherent measure the detector gates on, but
+    evaluated everywhere instead of only where the envelope crossed a trigger.
+    Being normalised it is amplitude-invariant: a beep 20 dB down scores the
+    same as a loud one, which is precisely what the trigger floor gets wrong.
+
+    Done as an FFT cross-correlation plus a sliding energy sum, so this costs
+    one pass over the recording rather than one dot product per offset.
+    """
+    tpl, tpl_freq, _ = analyze_beep_template(tpl_path, target_sr=sr)
+    sos = scipy.signal.butter(
+        2,
+        [tpl_freq - cfg.BEEP_BAND_HALF_WIDTH_HZ, tpl_freq + cfg.BEEP_BAND_HALF_WIDTH_HZ],
+        'bandpass', fs=sr, output='sos',
+    )
+    z = scipy.signal.hilbert(scipy.signal.sosfiltfilt(sos, y))
+    t = scipy.signal.hilbert(scipy.signal.sosfiltfilt(sos, tpl))
+    n = len(t)
+    if len(z) < n:
+        return np.zeros(0), n
+
+    numerator = np.abs(scipy.signal.correlate(z, t, mode='valid'))
+    cumulative = np.concatenate(([0.0], np.cumsum(np.abs(z) ** 2)))
+    energy = cumulative[n:] - cumulative[:-n]
+    denominator = np.sqrt(np.maximum(energy, 1e-20)) * np.linalg.norm(t)
+    return numerator / denominator, n
+
+
+def rescue_short_beeps(y, sr, valid_beeps, cfg: HalaConfig):
+    """Recover beeps the trigger floor hid from the detector.
+
+    Additive only: the detector's own beeps are never touched, re-measured or
+    re-ordered. This looks exclusively at the gaps between them, so a recording
+    whose beeps the detector already found gets nothing added and its output is
+    unchanged bit for bit. Returns (rescued_beeps, anomalies).
+
+    See HalaConfig.BEEP_RESCUE_* for why this is a second pass rather than a
+    better-behaved threshold in the detector itself.
+    """
+    if not cfg.BEEP_RESCUE_ENABLED or not valid_beeps:
+        return [], []
+
+    # File guard: a recording whose beeps already sit closer together than a
+    # trial is counting double-lobed beeps twice. Filling its "gaps" would
+    # compound that, so leave it alone.
+    starts = np.array([s for s, _ in valid_beeps], dtype=float)
+    if len(starts) > 1:
+        min_existing_gap = float(np.diff(starts).min()) / sr
+        if min_existing_gap < cfg.BEEP_RESCUE_MIN_EXISTING_GAP_S:
+            logger.info(
+                "Beep rescue skipped: existing beeps are %.2f s apart at the closest, "
+                "below the %.2f s over-detection guard.",
+                min_existing_gap, cfg.BEEP_RESCUE_MIN_EXISTING_GAP_S,
+            )
+            return [], []
+
+    profile, beep_len = None, 0
+    for tpl_path in cfg.resolved_template_paths():
+        if not os.path.isfile(tpl_path):
+            continue
+        candidate_profile, n = _match_profile(y, sr, cfg, tpl_path)
+        if not len(candidate_profile):
+            continue
+        beep_len = max(beep_len, n)
+        if profile is None:
+            profile = candidate_profile
+        else:  # a beep counts if it matches ANY template, as in the detector
+            shared = min(len(profile), len(candidate_profile))
+            profile = np.maximum(profile[:shared], candidate_profile[:shared])
+    if profile is None or not len(profile):
+        return [], []
+
+    # Peak-picking with a minimum separation is what keeps a double-lobed beep
+    # from being read as two: the lobes are ~110-140 ms apart, far inside the
+    # separation, so only the better-matching lobe survives.
+    separation = int(cfg.BEEP_RESCUE_MIN_GAP_S * sr)
+    peaks, properties = scipy.signal.find_peaks(
+        profile, height=cfg.BEEP_RESCUE_MATCH_MIN, distance=max(1, separation)
+    )
+
+    kept = []
+    # Best match first, so which peak survives a clash is decided by fit rather
+    # than by scan order.
+    for peak, score in sorted(zip(peaks, properties["peak_heights"]), key=lambda p: -p[1]):
+        start, end = int(peak), int(peak + beep_len)
+        neighbours = list(valid_beeps) + [(k[0], k[1]) for k in kept]
+        if any(start < other_end + separation and other_start < end + separation
+               for other_start, other_end in neighbours):
+            continue
+        kept.append((start, end, float(score)))
+    kept.sort(key=lambda k: k[0])
+
+    anomalies = [{
+        'kind': 'rescued_beep',
+        'trial_name': '',            # stamped by the pipeline once trials are numbered
+        'time_s': start / sr,
+        'duration_ms': (end - start) / sr * 1000,
+        'detail': 'too quiet for the detector trigger; found by template match and accepted',
+        'tone_match': round(score, 3),
+    } for start, end, score in kept]
+
+    if kept:
+        logger.warning(
+            "Beep rescue: recovered %d beep(s) the trigger floor hid (match %.2f-%.2f).",
+            len(kept), min(k[2] for k in kept), max(k[2] for k in kept),
+        )
+        if len(kept) > len(valid_beeps):
+            logger.warning(
+                "Beep rescue supplied MORE beeps (%d) than the detector accepted (%d) — this "
+                "recording was largely below the trigger floor; check it by hand.",
+                len(kept), len(valid_beeps),
+            )
+    return [(s, e) for s, e, _ in kept], anomalies
 
 def tone_match_scores(y, sr, cfg: HalaConfig, start_samples) -> list[float]:
     """Best phase-coherent template match at each start sample (audit only).
