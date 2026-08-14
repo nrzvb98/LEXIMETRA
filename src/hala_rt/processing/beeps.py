@@ -195,6 +195,10 @@ def _match_profile(y, sr, cfg: HalaConfig, tpl_path):
 
     Done as an FFT cross-correlation plus a sliding energy sum, so this costs
     one pass over the recording rather than one dot product per offset.
+
+    Returns (profile, n, exact_at). The profile is fast but approximate near
+    silence; `exact_at(i)` recomputes one offset without the shortcut, for
+    confirming a candidate before it is accepted.
     """
     tpl, tpl_freq, _ = analyze_beep_template(tpl_path, target_sr=sr)
     sos = scipy.signal.butter(
@@ -205,14 +209,40 @@ def _match_profile(y, sr, cfg: HalaConfig, tpl_path):
     z = scipy.signal.hilbert(scipy.signal.sosfiltfilt(sos, y))
     t = scipy.signal.hilbert(scipy.signal.sosfiltfilt(sos, tpl))
     n = len(t)
+    tpl_norm = np.linalg.norm(t)
+
+    def exact_at(i):
+        """Match at one offset, window energy summed directly."""
+        window = z[i:i + n]
+        if len(window) < n:
+            return 0.0
+        energy = float(np.sum(np.abs(window) ** 2))
+        if energy <= 0.0:
+            return 0.0
+        return float(np.abs(np.vdot(t, window)) / (np.sqrt(energy) * tpl_norm))
+
     if len(z) < n:
-        return np.zeros(0), n
+        return np.zeros(0), n, exact_at
 
     numerator = np.abs(scipy.signal.correlate(z, t, mode='valid'))
     cumulative = np.concatenate(([0.0], np.cumsum(np.abs(z) ** 2)))
     energy = cumulative[n:] - cumulative[:-n]
-    denominator = np.sqrt(np.maximum(energy, 1e-20)) * np.linalg.norm(t)
-    return numerator / denominator, n
+    denominator = np.sqrt(np.maximum(energy, 1e-20)) * tpl_norm
+    profile = numerator / denominator
+
+    # That sliding energy is a difference of two large running totals, and float64
+    # cannot resolve it once they dwarf the window. On one corpus recording the
+    # total stands at 4.7e4 by the final second while a near-silent window holds
+    # 1.6e-10: the subtraction cancels to exactly zero, the 1e-20 floor takes
+    # over, and the ratio explodes to 36958 instead of collapsing to 0.29.
+    #
+    # A normalised match cannot exceed 1.0, so anything that does is a
+    # normalisation failure rather than a beep. Clear it HERE, before any
+    # peak-picking: find_peaks keeps only the tallest peak per `distance` window,
+    # so a spurious 36958 left in place would not merely add itself -- it would
+    # suppress every genuine candidate within BEEP_RESCUE_MIN_GAP_S of it.
+    profile[~np.isfinite(profile) | (profile > 1.0)] = 0.0
+    return profile, n, exact_at
 
 
 def rescue_short_beeps(y, sr, valid_beeps, cfg: HalaConfig):
@@ -244,13 +274,15 @@ def rescue_short_beeps(y, sr, valid_beeps, cfg: HalaConfig):
             return [], []
 
     profile, beep_len = None, 0
+    exact_scorers = []
     for tpl_path in cfg.resolved_template_paths():
         if not os.path.isfile(tpl_path):
             continue
-        candidate_profile, n = _match_profile(y, sr, cfg, tpl_path)
+        candidate_profile, n, exact_at = _match_profile(y, sr, cfg, tpl_path)
         if not len(candidate_profile):
             continue
         beep_len = max(beep_len, n)
+        exact_scorers.append(exact_at)
         if profile is None:
             profile = candidate_profile
         else:  # a beep counts if it matches ANY template, as in the detector
@@ -263,14 +295,26 @@ def rescue_short_beeps(y, sr, valid_beeps, cfg: HalaConfig):
     # from being read as two: the lobes are ~110-140 ms apart, far inside the
     # separation, so only the better-matching lobe survives.
     separation = int(cfg.BEEP_RESCUE_MIN_GAP_S * sr)
-    peaks, properties = scipy.signal.find_peaks(
+    peaks, _ = scipy.signal.find_peaks(
         profile, height=cfg.BEEP_RESCUE_MATCH_MIN, distance=max(1, separation)
     )
+
+    # Confirm every candidate with an exact energy sum before it can be accepted.
+    # Clamping the profile above catches the case where cancellation leaves zero,
+    # but it cannot catch the case where it leaves a small POSITIVE residue: at
+    # this recording's magnitudes, ~2.6 ULP of leftover is enough to turn a true
+    # 0.29 into an apparent 0.85 without ever exceeding 1.0. There are only a
+    # handful of peaks per recording, so being exact here is free.
+    candidates = []
+    for peak in peaks:
+        score = max(scorer(int(peak)) for scorer in exact_scorers)
+        if score >= cfg.BEEP_RESCUE_MATCH_MIN:
+            candidates.append((int(peak), score))
 
     kept = []
     # Best match first, so which peak survives a clash is decided by fit rather
     # than by scan order.
-    for peak, score in sorted(zip(peaks, properties["peak_heights"]), key=lambda p: -p[1]):
+    for peak, score in sorted(candidates, key=lambda p: -p[1]):
         start, end = int(peak), int(peak + beep_len)
         neighbours = list(valid_beeps) + [(k[0], k[1]) for k in kept]
         if any(start < other_end + separation and other_start < end + separation

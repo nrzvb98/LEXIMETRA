@@ -2,5 +2,5 @@
 # The pipeline sources here are vendored; change them upstream.
 pipeline_version: 1.2.0
 upstream_repo: Hala_Processing
-upstream_commit: 223b16e
+upstream_commit: 8970af9
 vendored_on: 2026-08-14
