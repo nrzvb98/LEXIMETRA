@@ -558,6 +558,14 @@ Output CSV: {output_path}"""
 
         if outcome.succeeded:
             text = f"Analyzed {outcome.trial_count} trial(s) automatically."
+            if outcome.rescued_beep_count:
+                # These trials come from beeps too quiet for the detector's
+                # trigger. Saying so is the only hint the user gets that this
+                # recording needed rescuing -- worth a check before verifying.
+                text += (
+                    f" {outcome.rescued_beep_count} quiet beep(s) recovered;"
+                    " check those trials."
+                )
             if outcome.backup_path:
                 text += f" Previous CSV kept as {outcome.backup_path.name}."
             return text, "success"

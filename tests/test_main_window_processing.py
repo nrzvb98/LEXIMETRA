@@ -96,12 +96,13 @@ def processing(monkeypatch):
     return install
 
 
-def success(trial_count, backup_path=None):
+def success(trial_count, backup_path=None, rescued_beep_count=0):
     return ProcessingOutcome(
         status=ProcessingStatus.SUCCESS,
         message=f"Processed {trial_count} trial(s).",
         trial_count=trial_count,
         backup_path=backup_path,
+        rescued_beep_count=rescued_beep_count,
     )
 
 
@@ -115,6 +116,27 @@ def test_missing_csv_is_analyzed_automatically(loaded_window, audio_file, proces
     assert calls == [str(audio_file)]
     assert len(loaded_window.session_data) == 3
     assert "Analyzed 3 trial(s)" in loaded_window.status_label.text()
+
+
+def test_recovered_beeps_are_mentioned_in_the_status(
+    loaded_window, audio_file, processing
+):
+    """Otherwise the extra trials appear with no explanation anywhere visible."""
+    processing(success(5, rescued_beep_count=2), writes=5)
+
+    loaded_window._load_audio_file(audio_file)
+
+    status = loaded_window.status_label.text()
+    assert "Analyzed 5 trial(s)" in status
+    assert "2 quiet beep(s) recovered" in status
+
+
+def test_a_clean_recording_mentions_no_beeps(loaded_window, audio_file, processing):
+    processing(success(5), writes=5)
+
+    loaded_window._load_audio_file(audio_file)
+
+    assert "recovered" not in loaded_window.status_label.text()
 
 
 def test_existing_csv_is_kept_when_the_user_declines(

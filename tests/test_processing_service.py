@@ -42,11 +42,18 @@ def write_output_csv(path, trial_count):
 
 
 class FakeResult:
-    def __init__(self, trial_count):
+    def __init__(self, trial_count, beep_anomalies=None):
         self.df_output = list(range(trial_count))
+        # Mirrors HalaResult, which defaults this to an empty list.
+        self.beep_anomalies = beep_anomalies or []
 
 
-def fake_pipeline(trial_count=3, stages=(("load", 1, 1), ("vad", 1, 1)), raises=None):
+def fake_pipeline(
+    trial_count=3,
+    stages=(("load", 1, 1), ("vad", 1, 1)),
+    raises=None,
+    beep_anomalies=None,
+):
     """Build a stand-in for ``process_audio`` with the same call signature."""
 
     def process_audio(audio_path, output_dir=None, on_progress=None, **kwargs):
@@ -61,7 +68,7 @@ def fake_pipeline(trial_count=3, stages=(("load", 1, 1), ("vad", 1, 1)), raises=
         (slices / "Trial_001.wav").write_bytes(b"fake audio")
         (output_dir / f"{audio_path.stem}_HALA_Analysis_Results.csv").write_text("analysis")
         write_output_csv(output_dir / f"{audio_path.stem}_hala_output.csv", trial_count)
-        return FakeResult(trial_count)
+        return FakeResult(trial_count, beep_anomalies)
 
     return process_audio
 
@@ -136,6 +143,46 @@ def test_success_puts_the_csv_beside_the_audio(audio, pipeline):
     assert outcome.trial_count == 4
     assert outcome.csv_path == audio.parent / "session_hala_output.csv"
     assert outcome.csv_path.is_file()
+
+
+def test_recovered_beeps_are_counted_and_reported(audio, pipeline):
+    """A quiet recording gains trials the detector never saw; say so.
+
+    Without this the only trace is a sidecar CSV the user has no reason to
+    open, so extra trials would appear with no explanation at all.
+    """
+    pipeline(fake_pipeline(trial_count=4, beep_anomalies=[
+        {"kind": "rescued_beep", "trial_name": "Trial_002", "tone_match": 0.97},
+        {"kind": "rescued_beep", "trial_name": "Trial_007", "tone_match": 0.91},
+    ]))
+
+    outcome = run_processing(audio)
+
+    assert outcome.succeeded
+    assert outcome.rescued_beep_count == 2
+    assert "2 quiet beep(s) recovered" in outcome.message
+
+
+def test_only_rescued_beeps_count_as_recovered(audio, pipeline):
+    """The other anomaly kinds are pairing bookkeeping, not recovered trials."""
+    pipeline(fake_pipeline(trial_count=3, beep_anomalies=[
+        {"kind": "filled_from_template", "trial_name": "Trial_001"},
+        {"kind": "dropped_legacy_beep", "trial_name": "Trial_003"},
+    ]))
+
+    outcome = run_processing(audio)
+
+    assert outcome.rescued_beep_count == 0
+    assert "recovered" not in outcome.message
+
+
+def test_a_clean_recording_says_nothing_about_beeps(audio, pipeline):
+    pipeline(fake_pipeline(trial_count=3))
+
+    outcome = run_processing(audio)
+
+    assert outcome.rescued_beep_count == 0
+    assert outcome.message == "Processed 3 trial(s)."
 
 
 def test_pipeline_artifacts_stay_in_the_sidecar(audio, pipeline):

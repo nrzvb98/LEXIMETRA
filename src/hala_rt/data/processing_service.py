@@ -55,6 +55,10 @@ class ProcessingOutcome:
     sidecar_dir: Optional[Path] = None
     backup_path: Optional[Path] = None
     trial_count: int = 0
+    # Beeps too quiet for the detector's trigger, recovered by template match.
+    # Worth reporting because they are trials the user would otherwise never
+    # see: the pipeline's own explanation goes to a sidecar CSV nobody opens.
+    rescued_beep_count: int = 0
 
     @property
     def succeeded(self):
@@ -193,11 +197,22 @@ def run_processing(
     produced_csv.replace(target_csv)
 
     trial_count = len(result.df_output) if result.df_output is not None else 0
+
+    # The pipeline reports several kinds of beep anomaly; only `rescued_beep`
+    # means a trial exists that the detector alone would not have produced.
+    rescued_beep_count = sum(
+        1 for anomaly in result.beep_anomalies if anomaly.get("kind") == "rescued_beep"
+    )
+    message = f"Processed {trial_count} trial(s)."
+    if rescued_beep_count:
+        message += f" {rescued_beep_count} quiet beep(s) recovered."
+
     return ProcessingOutcome(
         status=ProcessingStatus.SUCCESS,
-        message=f"Processed {trial_count} trial(s).",
+        message=message,
         csv_path=target_csv,
         sidecar_dir=sidecar,
         backup_path=backup_path,
         trial_count=trial_count,
+        rescued_beep_count=rescued_beep_count,
     )
