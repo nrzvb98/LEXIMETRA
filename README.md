@@ -340,6 +340,8 @@ later drift. See that directory's README for scope and re-baselining.
 
 ### Reference
 
+- **`CHANGELOG.md`** — User-visible changes per release, with the vendored
+  pipeline version each release shipped.
 - **`docs/output_schema.md`** — The canonical CSV output schema (Phase 5).
 - **`docs/integration_plan.md`** — How automatic analysis was integrated: the
   decisions taken, the corrections made along the way, and what is deliberately
