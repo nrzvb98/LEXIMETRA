@@ -59,6 +59,11 @@ class ProcessingOutcome:
     # Worth reporting because they are trials the user would otherwise never
     # see: the pipeline's own explanation goes to a sidecar CSV nobody opens.
     rescued_beep_count: int = 0
+    # Beeps that reached the microphone as several lobes, each detected as its
+    # own trial, now collapsed into one. Worth reporting because an affected
+    # recording produces far fewer trials than an earlier run of the same file
+    # did, and this is the only visible explanation.
+    merged_beep_count: int = 0
 
     @property
     def succeeded(self):
@@ -198,12 +203,19 @@ def run_processing(
 
     trial_count = len(result.df_output) if result.df_output is not None else 0
 
-    # The pipeline reports several kinds of beep anomaly; only `rescued_beep`
-    # means a trial exists that the detector alone would not have produced.
+    # The pipeline reports several kinds of beep anomaly; two of them change
+    # the trial list itself and deserve a mention: `merged_double_lobe`
+    # collapses detections that were lobes of one beep (one row per merged
+    # beep), and `rescued_beep` adds a trial the detector alone missed.
+    merged_beep_count = sum(
+        1 for anomaly in result.beep_anomalies if anomaly.get("kind") == "merged_double_lobe"
+    )
     rescued_beep_count = sum(
         1 for anomaly in result.beep_anomalies if anomaly.get("kind") == "rescued_beep"
     )
     message = f"Processed {trial_count} trial(s)."
+    if merged_beep_count:
+        message += f" {merged_beep_count} double-lobed beep(s) merged."
     if rescued_beep_count:
         message += f" {rescued_beep_count} quiet beep(s) recovered."
 
@@ -215,4 +227,5 @@ def run_processing(
         backup_path=backup_path,
         trial_count=trial_count,
         rescued_beep_count=rescued_beep_count,
+        merged_beep_count=merged_beep_count,
     )

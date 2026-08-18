@@ -163,6 +163,28 @@ def test_recovered_beeps_are_counted_and_reported(audio, pipeline):
     assert "2 quiet beep(s) recovered" in outcome.message
 
 
+def test_merged_beeps_are_counted_and_reported(audio, pipeline):
+    """A lobed recording produces far fewer trials than it used to; say so.
+
+    Each merged_double_lobe row is one physical beep that earlier versions
+    counted as several trials, so on reprocessing the trial count can drop
+    by half with no other visible explanation.
+    """
+    pipeline(fake_pipeline(trial_count=4, beep_anomalies=[
+        {"kind": "merged_double_lobe", "trial_name": "Trial_001", "tone_match": 0.95},
+        {"kind": "merged_double_lobe", "trial_name": "Trial_003", "tone_match": 0.88},
+        {"kind": "rescued_beep", "trial_name": "Trial_004", "tone_match": 0.91},
+    ]))
+
+    outcome = run_processing(audio)
+
+    assert outcome.succeeded
+    assert outcome.merged_beep_count == 2
+    assert outcome.rescued_beep_count == 1
+    assert "2 double-lobed beep(s) merged" in outcome.message
+    assert "1 quiet beep(s) recovered" in outcome.message
+
+
 def test_only_rescued_beeps_count_as_recovered(audio, pipeline):
     """The other anomaly kinds are pairing bookkeeping, not recovered trials."""
     pipeline(fake_pipeline(trial_count=3, beep_anomalies=[
@@ -173,7 +195,9 @@ def test_only_rescued_beeps_count_as_recovered(audio, pipeline):
     outcome = run_processing(audio)
 
     assert outcome.rescued_beep_count == 0
+    assert outcome.merged_beep_count == 0
     assert "recovered" not in outcome.message
+    assert "merged" not in outcome.message
 
 
 def test_a_clean_recording_says_nothing_about_beeps(audio, pipeline):
@@ -182,6 +206,7 @@ def test_a_clean_recording_says_nothing_about_beeps(audio, pipeline):
     outcome = run_processing(audio)
 
     assert outcome.rescued_beep_count == 0
+    assert outcome.merged_beep_count == 0
     assert outcome.message == "Processed 3 trial(s)."
 
 

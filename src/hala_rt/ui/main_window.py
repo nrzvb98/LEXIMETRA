@@ -558,6 +558,15 @@ Output CSV: {output_path}"""
 
         if outcome.succeeded:
             text = f"Analyzed {outcome.trial_count} trial(s) automatically."
+            if outcome.merged_beep_count:
+                # Each merged beep was several detections in earlier versions,
+                # so an affected recording reprocesses into far fewer trials
+                # than the user saw before. This is the only explanation they
+                # get outside the sidecar report.
+                text += (
+                    f" {outcome.merged_beep_count} double-lobed beep(s)"
+                    " merged into single trials."
+                )
             if outcome.rescued_beep_count:
                 # These trials come from beeps too quiet for the detector's
                 # trigger. Saying so is the only hint the user gets that this
