@@ -95,6 +95,10 @@ def process_audio(
     if not valid_beeps:
         raise RuntimeError(f"No beeps detected in {audio_path.name}")
 
+    # Collapse double-lobed beeps before the rescue pass, so the rescue's
+    # over-detection guard measures real trial spacing rather than lobe gaps.
+    valid_beeps, merge_anomalies = beeps_mod.merge_double_lobed_beeps(valid_beeps, sr, cfg)
+
     # Recover beeps the trigger floor clipped below the duration gate. Additive:
     # returns nothing unless a rejected fragment re-measures into a real beep.
     rescued_beeps, rescue_anomalies = beeps_mod.rescue_short_beeps(y, sr, valid_beeps, cfg)
@@ -139,6 +143,35 @@ def process_audio(
     # shift beeps against speech (see beeps.pair_beeps_to_slices).
     df_legacy = beeps_mod.detect_beeps_legacy(y, sr, cfg)
     df_beep_timings, beep_anomalies = beeps_mod.pair_beeps_to_slices(valid_beeps, df_legacy, sr, cfg)
+
+    if merge_anomalies:
+        # A merged beep ends at its LAST lobe and the slice starts there, but
+        # the matched legacy row still ends at the first lobe — carrying it
+        # verbatim would understate every RT on the trial by the chain span
+        # (up to ~0.5 s). Use the template chain's own timing instead: exact
+        # for the beep_end -> speech arithmetic by the same argument as the
+        # filled_from_template branch in pair_beeps_to_slices.
+        merged_trials = set()
+        for anomaly in merge_anomalies:
+            beep = anomaly.pop('beep')
+            index = valid_beeps.index(beep)
+            trial_name = f"Trial_{index + 1:03d}"
+            anomaly['trial_name'] = trial_name
+            merged_trials.add(trial_name)
+            row = df_beep_timings['trial_name'] == trial_name
+            df_beep_timings.loc[row, 'beep_timestamp_global'] = beep[0] / sr
+            df_beep_timings.loc[row, 'beep_start_ms'] = beep[0] / sr * 1000
+            df_beep_timings.loc[row, 'beep_end_ms'] = beep[1] / sr * 1000
+        # The merge row supersedes a filled_from_template row for the same
+        # trial: the legacy detector missing a chain head is implied by the
+        # merge, and two report rows for one beep only confuse.
+        beep_anomalies = [
+            a for a in beep_anomalies
+            if not (a['kind'] == 'filled_from_template' and a['trial_name'] in merged_trials)
+        ]
+        beep_anomalies.extend(merge_anomalies)
+        beep_anomalies.sort(key=lambda a: a['time_s'])
+
     if beep_anomalies:
         scores = beeps_mod.tone_match_scores(
             y, sr, cfg, [int(a['time_s'] * sr) for a in beep_anomalies]

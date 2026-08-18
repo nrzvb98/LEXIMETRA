@@ -27,6 +27,24 @@ class HalaConfig:
     BEEP_MATCH_THRESHOLD: float = 0.60        # tone-match coherence gate (real beeps ~0.97+, speech <0.4)
     BEEP_PURITY_THRESHOLD: float = 0.80       # min in-band/wide-band RMS ratio
 
+    # --- Merging double-lobed beeps ---
+    # On 8 corpus recordings the beep reaches the mic as a burst of 2-4 lobes
+    # and the detector accepts several lobes of the same physical beep as
+    # separate beeps: 914 turns 102 real trials into 269, and the slivers
+    # between lobes surface as no-speech rows. Measured over the whole corpus,
+    # consecutive detections are either <=0.534 s apart (lobes of one beep) or
+    # >=1.424 s apart (genuinely consecutive trials) — nothing falls between,
+    # so any threshold inside that band merges every lobe chain and cannot
+    # touch a real trial boundary. NOTE the band is NOT 1.0-1.5 s as the
+    # per-file MIN gaps suggest: 915's true inter-trial gaps come down to
+    # 1.424 s and its lobe gaps go up to 0.534 s. 1.0 s sits inside the safe
+    # band and matches BEEP_RESCUE_MIN_EXISTING_GAP_S, which already treats
+    # sub-1.0 s spacing as over-detection. The merged beep keeps the FIRST
+    # lobe's start (the app's RT anchor is beep onset; heads all pass the
+    # detector's gates) and the LAST lobe's end (the slice must begin after
+    # all beep energy). <=0 disables merging.
+    BEEP_MERGE_MAX_GAP_S: float = 1.0
+
     # --- Beep detection: legacy fixed-band (drives the final CSV timestamps) ---
     # Kept separate from the template-matched detector on purpose: the exported
     # beep_timestamp_global / trial windows have always come from this detector.

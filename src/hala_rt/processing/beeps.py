@@ -159,6 +159,55 @@ def detect_beeps_template_matched(y, sr, cfg: HalaConfig):
     return valid_beeps
 
 
+def merge_double_lobed_beeps(valid_beeps, sr, cfg: HalaConfig):
+    """Collapse chains of detections that are lobes of one physical beep.
+
+    Consecutive detections closer than BEEP_MERGE_MAX_GAP_S (start to start)
+    are one beep heard as several lobes. The merged beep keeps the first
+    lobe's start — beep onset is the RT anchor — and the last lobe's end, so
+    the trial slice begins after all beep energy. A recording whose
+    detections are all at least the threshold apart passes through untouched.
+
+    Returns (merged_beeps, anomalies); each anomaly carries the merged
+    (start, end) under 'beep' for the pipeline to stamp a trial name on.
+    """
+    max_gap = float(cfg.BEEP_MERGE_MAX_GAP_S)
+    if max_gap <= 0 or len(valid_beeps) < 2:
+        return list(valid_beeps), []
+
+    chains = [[valid_beeps[0]]]
+    for beep in valid_beeps[1:]:
+        if (beep[0] - chains[-1][-1][0]) / sr < max_gap:
+            chains[-1].append(beep)
+        else:
+            chains.append([beep])
+
+    merged, anomalies = [], []
+    for chain in chains:
+        start = chain[0][0]
+        end = max(e for _, e in chain)
+        merged.append((start, end))
+        if len(chain) > 1:
+            lobes = ", ".join(f"{s / sr:.3f}s" for s, _ in chain)
+            anomalies.append({
+                'kind': 'merged_double_lobe',
+                'trial_name': '',   # stamped by the pipeline once trials are numbered
+                'time_s': start / sr,
+                'duration_ms': (end - start) / sr * 1000,
+                'detail': f'{len(chain)} detections within {max_gap:.1f}s are lobes of one beep '
+                          f'(at {lobes}); kept first start and last end',
+                'beep': (start, end),
+            })
+
+    if anomalies:
+        logger.warning(
+            "Lobe merge: %d detections were lobes of %d beeps; %d -> %d beeps total.",
+            len(valid_beeps) - len(merged) + len(anomalies), len(anomalies),
+            len(valid_beeps), len(merged),
+        )
+    return merged, anomalies
+
+
 def slice_trials(y, sr, valid_beeps, slice_dir, cfg: HalaConfig):
     """Write one WAV per trial (beep END -> next beep start, or +SLICE_TAIL_S).
 
