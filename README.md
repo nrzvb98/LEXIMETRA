@@ -65,7 +65,7 @@ packaging/macos/build_app.sh
 ```
 
 The script creates `dist/LEXIMETRA.app` and the sendable archive
-`dist/LEXIMETRA_0.2.0_macos_arm64.zip` (**212 MB**). The archive includes Python,
+`dist/LEXIMETRA_0.2.1_macos_arm64.zip` (**211 MB**). The archive includes Python,
 the Python dependencies, a bundled LGPL-oriented FFmpeg build for M4A/M4V
 decoding, and the analysis pipeline with its Silero VAD model, so recipients need
 neither Python, nor Homebrew FFmpeg, nor a network connection on first run.
@@ -86,7 +86,7 @@ x86_64 Python 3.11 virtualenv at `.venv-x86_64`:
 TARGET_ARCH=x86_64 packaging/macos/build_app.sh
 ```
 
-That produces `dist/LEXIMETRA_0.2.0_macos_x86_64.zip`, always without automatic
+That produces `dist/LEXIMETRA_0.2.1_macos_x86_64.zip`, always without automatic
 analysis — there are no macOS x86_64 torch wheels — so it is a verification-only
 app. On Apple Silicon build machines the Intel build requires Rosetta and an
 x86_64-capable Python environment; on Intel Macs it can be built natively.
@@ -109,7 +109,7 @@ powershell -ExecutionPolicy Bypass -File packaging\windows\build_app.ps1
 ```
 
 The script creates `dist\LEXIMETRA\LEXIMETRA.exe` and the sendable archive
-`dist\LEXIMETRA_0.2.0_windows_x64.zip`. The Windows package bundles Python, the
+`dist\LEXIMETRA_0.2.1_windows_x64.zip`. The Windows package bundles Python, the
 Python dependencies, the LEXIMETRA icon, and `ffmpeg.exe` / `ffprobe.exe` under
 `_internal\bin` so M4A/M4V decoding works without a user-installed FFmpeg.
 
