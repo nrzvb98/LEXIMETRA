@@ -142,7 +142,7 @@ def test_a_clean_recording_mentions_no_beeps(loaded_window, audio_file, processi
 def test_existing_csv_is_kept_when_the_user_declines(
     loaded_window, audio_file, processing, monkeypatch
 ):
-    write_csv(audio_file.parent / "session_hala_output.csv", 2)
+    write_csv(audio_file.parent / "session_output.csv", 2)
     calls = processing(success(9), writes=9)
     monkeypatch.setattr(
         QMessageBox,
@@ -159,7 +159,7 @@ def test_existing_csv_is_kept_when_the_user_declines(
 def test_existing_csv_is_reanalyzed_when_the_user_agrees(
     loaded_window, audio_file, processing
 ):
-    write_csv(audio_file.parent / "session_hala_output.csv", 2)
+    write_csv(audio_file.parent / "session_output.csv", 2)
     # The shared ``dialogs`` fixture answers every question Yes.
     calls = processing(success(9), writes=9)
 
@@ -172,7 +172,7 @@ def test_existing_csv_is_reanalyzed_when_the_user_agrees(
 def test_analysis_is_skipped_when_unavailable(
     loaded_window, audio_file, monkeypatch
 ):
-    write_csv(audio_file.parent / "session_hala_output.csv", 2)
+    write_csv(audio_file.parent / "session_output.csv", 2)
     monkeypatch.setattr("hala_rt.ui.main_window.processing_available", lambda: False)
     called = []
     monkeypatch.setattr(
@@ -187,14 +187,34 @@ def test_analysis_is_skipped_when_unavailable(
     assert len(loaded_window.session_data) == 2
 
 
+def test_a_legacy_named_csv_still_loads(
+    loaded_window, audio_file, processing, monkeypatch
+):
+    """CSVs verified before the ``_output`` rename must not be re-analyzed away."""
+    legacy = audio_file.parent / "session_hala_output.csv"
+    write_csv(legacy, 2)
+    calls = processing(success(9), writes=9)
+    monkeypatch.setattr(
+        QMessageBox,
+        "question",
+        staticmethod(lambda *args, **kwargs: QMessageBox.StandardButton.No),
+    )
+
+    loaded_window._load_audio_file(audio_file)
+
+    assert calls == []
+    assert loaded_window.output_csv_path == legacy
+    assert len(loaded_window.session_data) == 2
+
+
 def test_a_backup_is_named_in_the_status(loaded_window, audio_file, processing):
-    write_csv(audio_file.parent / "session_hala_output.csv", 2)
-    backup = audio_file.parent / "session_hala_output_backup.csv"
+    write_csv(audio_file.parent / "session_output.csv", 2)
+    backup = audio_file.parent / "session_output_backup.csv"
     processing(success(4, backup_path=backup), writes=4)
 
     loaded_window._load_audio_file(audio_file)
 
-    assert "session_hala_output_backup.csv" in loaded_window.status_label.text()
+    assert "session_output_backup.csv" in loaded_window.status_label.text()
 
 
 # --- failures leave a usable window -----------------------------------------

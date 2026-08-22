@@ -12,7 +12,7 @@ class _ExplodingTrial(TrialData):
 
 
 def test_write_and_load_output_csv(tmp_path):
-    path = tmp_path / "trial_hala_output.csv"
+    path = tmp_path / "trial_output.csv"
     trials = [
         TrialData(
             trial_index=1,
@@ -33,7 +33,7 @@ def test_write_and_load_output_csv(tmp_path):
 
 
 def test_failed_write_leaves_the_previous_csv_intact(tmp_path):
-    path = tmp_path / "trial_hala_output.csv"
+    path = tmp_path / "trial_output.csv"
     first = TrialData(
         trial_index=1,
         trial_start_global=0.0,
@@ -67,7 +67,7 @@ def test_failed_write_leaves_the_previous_csv_intact(tmp_path):
 
 
 def test_write_preserves_existing_file_permissions(tmp_path):
-    path = tmp_path / "trial_hala_output.csv"
+    path = tmp_path / "trial_output.csv"
     trial = TrialData(
         trial_index=1,
         trial_start_global=0.0,

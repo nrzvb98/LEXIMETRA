@@ -150,7 +150,7 @@ python -m hala_rt
 2. The recording is analyzed automatically and the trials appear with their markers already placed. If an output CSV already exists you are asked whether to keep it or analyze again.
 3. Step through the trials and check them in the **Trial Detail View**, moving the **Beep Start**, **First Speech**, and **Main Response** markers where the analysis got it wrong. Reaction times update as you go.
 4. Edit any cell in the **Trial Output Editor** table directly if needed.
-5. Click **Save Output CSV** (defaults to `<audiofile>_hala_output.csv`) or **Save Output CSV As…** for an edited copy.
+5. Click **Save Output CSV** (defaults to `<audiofile>_output.csv`) or **Save Output CSV As…** for an edited copy.
 
 To cut trials by hand instead — when a recording has no beeps, or analysis is not
 installed — place the trial-end cursor on the **Global Timeline** and click
@@ -160,13 +160,17 @@ installed — place the trial-end cursor on the **Global Timeline** and click
 
 | Path | Contents |
 | --- | --- |
-| `/sessions/p001_hala_output.csv` | The output CSV the app loads and saves |
-| `/sessions/p001_hala/HALA_Slices/Trial_NNN.wav` | Per-trial audio from the analysis |
-| `/sessions/p001_hala/p001_HALA_Full_Analysis_Results.csv` | Absolute beep/speech/hesitation timings |
-| `/sessions/p001_hala/p001_HALA_Analysis_Results.csv` | RT and response-type summary |
+| `/sessions/p001_output.csv` | The output CSV the app loads and saves |
+| `/sessions/p001_output/Slices/Trial_NNN.wav` | Per-trial audio from the analysis |
+| `/sessions/p001_output/p001_Full_Analysis_Results.csv` | Absolute beep/speech/hesitation timings |
+| `/sessions/p001_output/p001_Analysis_Results.csv` | RT and response-type summary |
 
-Re-analyzing renames the existing output CSV to `p001_hala_output_backup.csv`
+Re-analyzing renames the existing output CSV to `p001_output_backup.csv`
 before writing a new one, so hand-verified work is never overwritten silently.
+
+A recording whose CSV was written by an older release (`p001_hala_output.csv`)
+still loads: the app prefers the new name but falls back to the legacy one, and
+keeps using the legacy name for that recording so its files stay together.
 
 ### Keyboard shortcuts
 
@@ -206,12 +210,18 @@ The analysis pipeline is a *vendored copy* of a separate project and is treated
 as a black box behind one service — see [Automatic analysis](#automatic-analysis).
 
 > **A note on names.** The product is LEXIMETRA; the Python package is still
-> `hala_rt`, and the data keeps its HALA naming — `<stem>_hala_output.csv`, the
-> `_hala/` sidecar, `HALA_Slices/`, and the `HALA_*` environment variables. That
-> split is deliberate: those filenames tie the app to an existing corpus of
-> recordings and to the study tooling in `Hala_Processing` that reads them, so
-> renaming them would orphan data rather than tidy it. Renaming the Python
-> package is possible later; renaming the data format is a migration.
+> `hala_rt`. Since the `_output` rename the app writes neutral artifact names — the
+> `<stem>_output.csv` CSV and `<stem>_output/` sidecar folder — and falls back
+> to reading a legacy `<stem>_hala_output.csv` where one exists, so the
+> existing corpus keeps loading. The vendored pipeline still writes its own
+> artifacts under upstream's names (`HALA_Slices/`, the `HALA_*_Results.csv`
+> files); the service renames them to `Slices/` and `<stem>_*_Results.csv` once
+> the run is over, so the sidecar carries no `HALA_` names on disk. The
+> pipeline sources are left alone deliberately — editing them means changing
+> `Hala_Processing` and re-vendoring, which would move the pipeline off the
+> commit this app was measured against. The `hala_rt` package name and the
+> `HALA_*` environment variables are unchanged. Study tooling that globs
+> `*_hala_output.csv` will not see CSVs the app writes under the new name.
 
 ```text
 LEXIMETRA/

@@ -13,8 +13,13 @@ dist/
 # macOS
 .DS_Store
 
-# Runtime data and user outputs
+# Runtime data and user outputs. Both names: recordings analyzed before the
+# rename keep `_hala_output`, and the pipeline's own result CSVs land in the
+# `<stem>_output/` sidecar alongside the beep anomaly report.
+*_output*.csv
 *_hala_output*.csv
+*_Analysis_Results.csv
+*_beep_pairing_report.csv
 
 # Audio data: keep real participant/session audio out of git
 *.wav

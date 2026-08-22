@@ -141,7 +141,7 @@ def test_success_puts_the_csv_beside_the_audio(audio, pipeline):
 
     assert outcome.succeeded
     assert outcome.trial_count == 4
-    assert outcome.csv_path == audio.parent / "session_hala_output.csv"
+    assert outcome.csv_path == audio.parent / "session_output.csv"
     assert outcome.csv_path.is_file()
 
 
@@ -190,40 +190,68 @@ def test_pipeline_artifacts_stay_in_the_sidecar(audio, pipeline):
 
     outcome = run_processing(audio)
 
-    sidecar = audio.parent / "session_hala"
+    sidecar = audio.parent / "session_output"
     assert outcome.sidecar_dir == sidecar
-    assert (sidecar / "HALA_Slices" / "Trial_001.wav").is_file()
-    assert (sidecar / "session_HALA_Analysis_Results.csv").is_file()
-    # Moved, not copied: one editable copy of the export, not two.
+    assert (sidecar / "Slices" / "Trial_001.wav").is_file()
+    assert (sidecar / "session_Analysis_Results.csv").is_file()
+    # Moved, not copied: one editable copy of the export, not two. The export
+    # keeps the pipeline's own name until the move renames it.
     assert not (sidecar / "session_hala_output.csv").exists()
     assert sorted(p.name for p in audio.parent.iterdir()) == [
         "session.m4a",
-        "session_hala",
-        "session_hala_output.csv",
+        "session_output",
+        "session_output.csv",
     ]
 
 
+def test_upstream_artifact_names_do_not_survive(audio, pipeline):
+    pipeline(fake_pipeline())
+
+    run_processing(audio)
+
+    sidecar = audio.parent / "session_output"
+    assert not (sidecar / "HALA_Slices").exists()
+    assert not (sidecar / "session_HALA_Analysis_Results.csv").exists()
+
+
+def test_reprocessing_replaces_the_previous_slices(audio, pipeline):
+    pipeline(fake_pipeline())
+    run_processing(audio)
+
+    # The pipeline clears its own HALA_Slices before each run but knows nothing
+    # about the renamed one, so without help the first run's trials would sit
+    # alongside the second run's -- and the rename onto a non-empty directory
+    # would fail outright.
+    stale = audio.parent / "session_output" / "Slices" / "Trial_999.wav"
+    stale.write_bytes(b"from the earlier run")
+
+    run_processing(audio)
+
+    assert not stale.exists()
+    assert (audio.parent / "session_output" / "Slices" / "Trial_001.wav").is_file()
+
+
 def test_existing_csv_is_backed_up_not_overwritten(audio, pipeline):
-    existing = audio.parent / "session_hala_output.csv"
+    existing = audio.parent / "session_output.csv"
     existing.write_text("hand,verified,work\n", encoding="utf-8")
     pipeline(fake_pipeline(trial_count=2))
 
     outcome = run_processing(audio)
 
-    assert outcome.backup_path == audio.parent / "session_hala_output_backup.csv"
+    assert outcome.backup_path == audio.parent / "session_output_backup.csv"
     assert outcome.backup_path.read_text(encoding="utf-8") == "hand,verified,work\n"
     assert outcome.csv_path.read_text(encoding="utf-8") != "hand,verified,work\n"
 
 
 def test_repeated_processing_keeps_every_backup(audio, pipeline):
-    (audio.parent / "session_hala_output.csv").write_text("first\n", encoding="utf-8")
+    (audio.parent / "session_output.csv").write_text("first\n", encoding="utf-8")
     pipeline(fake_pipeline())
 
     run_processing(audio)
     second = run_processing(audio)
 
-    assert second.backup_path == audio.parent / "session_hala_output_backup_2.csv"
-    assert (audio.parent / "session_hala_output_backup.csv").read_text(encoding="utf-8") == "first\n"
+    assert second.backup_path == audio.parent / "session_output_backup_2.csv"
+    assert (audio.parent / "session_output_backup.csv").read_text(encoding="utf-8") == "first\n"
 
 
 def test_recording_without_beeps_is_reported_distinctly(audio, pipeline):
@@ -236,7 +264,7 @@ def test_recording_without_beeps_is_reported_distinctly(audio, pipeline):
 
 
 def test_failure_leaves_the_existing_csv_untouched(audio, pipeline):
-    existing = audio.parent / "session_hala_output.csv"
+    existing = audio.parent / "session_output.csv"
     existing.write_text("hand,verified,work\n", encoding="utf-8")
     pipeline(fake_pipeline(raises=RuntimeError("boom")))
 
@@ -253,11 +281,11 @@ def test_failure_cleans_up_a_sidecar_it_created(audio, pipeline):
 
     run_processing(audio)
 
-    assert not (audio.parent / "session_hala").exists()
+    assert not (audio.parent / "session_output").exists()
 
 
 def test_failure_keeps_a_sidecar_from_an_earlier_run(audio, pipeline):
-    sidecar = audio.parent / "session_hala"
+    sidecar = audio.parent / "session_output"
     sidecar.mkdir()
     (sidecar / "earlier.csv").write_text("keep me", encoding="utf-8")
     pipeline(fake_pipeline(raises=RuntimeError("boom")))
@@ -278,7 +306,7 @@ def test_cancellation_stops_the_run(audio, pipeline):
     )
 
     assert outcome.status is ProcessingStatus.CANCELLED
-    assert not (audio.parent / "session_hala_output.csv").exists()
+    assert not (audio.parent / "session_output.csv").exists()
     assert seen == [("load", 1, 1), ("vad", 1, 5)]
 
 

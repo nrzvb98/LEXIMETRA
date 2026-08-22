@@ -116,14 +116,14 @@ def test_service_places_real_pipeline_output(tmp_path):
 
     assert outcome.status is ProcessingStatus.SUCCESS, outcome.message
     assert outcome.trial_count == 12
-    assert outcome.csv_path == tmp_path / "session_hala_output.csv"
+    assert outcome.csv_path == tmp_path / "session_output.csv"
     assert outcome.csv_path.is_file()
     assert outcome.backup_path is None
 
-    sidecar = tmp_path / "session_hala"
-    assert len(list((sidecar / "HALA_Slices").glob("*.wav"))) == 12
-    assert (sidecar / "session_HALA_Full_Analysis_Results.csv").is_file()
-    assert (sidecar / "session_HALA_Analysis_Results.csv").is_file()
+    sidecar = tmp_path / "session_output"
+    assert len(list((sidecar / "Slices").glob("*.wav"))) == 12
+    assert (sidecar / "session_Full_Analysis_Results.csv").is_file()
+    assert (sidecar / "session_Analysis_Results.csv").is_file()
     assert not (sidecar / "session_hala_output.csv").exists()
 
     assert {stage for stage, _, _ in stages} == {"load", "slices", "vad", "export"}
@@ -148,8 +148,8 @@ def test_loading_audio_analyzes_it_end_to_end(qapp, tmp_path, monkeypatch):
 
         assert len(window.session_data) == 12
         assert "Analyzed 12 trial(s)" in window.status_label.text()
-        assert (tmp_path / "session_hala_output.csv").is_file()
-        assert len(list((tmp_path / "session_hala" / "HALA_Slices").glob("*.wav"))) == 12
+        assert (tmp_path / "session_output.csv").is_file()
+        assert len(list((tmp_path / "session_output" / "Slices").glob("*.wav"))) == 12
         assert not window.has_unsaved_changes
 
         # The trials are usable: the table is populated and a trial is selected.

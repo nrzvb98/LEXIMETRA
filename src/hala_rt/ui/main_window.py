@@ -15,7 +15,7 @@ from PyQt6.QtWidgets import (
 
 from hala_rt.audio.manager import AudioManager
 from hala_rt.data.csv_io import load_output_csv, write_output_csv
-from hala_rt.data.output_paths import default_output_path, next_edited_output_path
+from hala_rt.data.output_paths import next_edited_output_path, resolve_output_path
 from hala_rt.data.processing_service import ProcessingStatus, processing_available
 from hala_rt.data.trial_data import (
     BOOLEAN_COLUMNS,
@@ -612,7 +612,7 @@ Output CSV: {output_path}"""
             QMessageBox.critical(self, "Error", "Failed to load audio file.\n\nCheck console for details.")
             return False
 
-        self.output_csv_path = default_output_path(file_path)
+        self.output_csv_path = resolve_output_path(file_path)
         self.global_waveform.set_audio_data(
             self.audio_manager.audio_data,
             self.audio_manager.sample_rate,

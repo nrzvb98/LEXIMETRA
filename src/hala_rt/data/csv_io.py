@@ -10,7 +10,7 @@ DEFAULT_OUTPUT_MODE = 0o644
 
 
 def load_output_csv(path):
-    """Load trial rows from a HALA output CSV."""
+    """Load trial rows from an output CSV."""
     output_path = Path(path)
     with output_path.open("r", newline="", encoding="utf-8") as csv_file:
         reader = csv.DictReader(csv_file)
@@ -26,7 +26,7 @@ def load_output_csv(path):
 
 
 def write_output_csv(path, trials):
-    """Write trial rows to a HALA output CSV, atomically.
+    """Write trial rows to an output CSV, atomically.
 
     The rows are hand-verified research data, so a failed write must not cost
     the previous CSV. Write a sibling temporary file, flush it to disk, then

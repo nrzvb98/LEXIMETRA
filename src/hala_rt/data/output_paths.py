@@ -1,11 +1,15 @@
 from pathlib import Path
 
 
-OUTPUT_SUFFIX = "_hala_output"
+OUTPUT_SUFFIX = "_output"
 EDITED_SUFFIX = "_edited"
 BACKUP_SUFFIX = "_backup"
-SIDECAR_SUFFIX = "_hala"
+SIDECAR_SUFFIX = "_output"
 CSV_SUFFIX = ".csv"
+
+# Name used through 0.2.x; recordings verified with those releases have their
+# CSV under this suffix, and that work must keep loading.
+LEGACY_OUTPUT_SUFFIX = "_hala_output"
 
 
 def default_output_path(audio_file_path, output_dir=None):
@@ -18,6 +22,25 @@ def default_output_path(audio_file_path, output_dir=None):
     audio_path = Path(audio_file_path)
     parent = Path(output_dir) if output_dir is not None else audio_path.parent
     return parent / f"{audio_path.stem}{OUTPUT_SUFFIX}{CSV_SUFFIX}"
+
+
+def resolve_output_path(audio_file_path):
+    """Return the CSV path the app should use for an audio file.
+
+    Prefers the current naming, but a recording whose CSV was written by a
+    0.2.x release only has a ``_hala_output.csv`` — that file may hold
+    hand-verified trials, so it wins over creating a fresh one under the new
+    name. Sticking with the legacy name for that recording (saves, backups,
+    edited copies included) keeps one recording's files under one name.
+    """
+    audio_path = Path(audio_file_path)
+    preferred = default_output_path(audio_path)
+    if preferred.exists():
+        return preferred
+    legacy = audio_path.parent / f"{audio_path.stem}{LEGACY_OUTPUT_SUFFIX}{CSV_SUFFIX}"
+    if legacy.exists():
+        return legacy
+    return preferred
 
 
 def processing_sidecar_dir(audio_file_path):
