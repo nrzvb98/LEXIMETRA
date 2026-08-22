@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: >-
+  If you use LEXIMETRA in published work, cite the released version you actually
+  ran. The pipeline's output can change between releases, so a bare repository
+  URL does not identify what produced a given set of reaction times.
+title: LEXIMETRA
+abstract: >-
+  A desktop tool for automatic trial analysis and reaction-time verification of
+  speech-response audio sessions. Detects onset cue beeps, cuts trials, marks
+  speech onsets with Silero VAD, and computes per-trial reaction times, which
+  are then checked and corrected by hand.
+type: software
+authors:
+  - given-names: Aisara
+    family-names: Nauryzbayeva
+    alias: nrzvb98
+    orcid: "https://orcid.org/0009-0006-4316-3194"
+repository-code: https://github.com/nrzvb98/LEXIMETRA
+license: MIT
+version: 0.2.0
+date-released: "2026-08-12"
+keywords:
+  - reaction time
+  - speech onset
+  - voice onset time
+  - picture naming task
+  - psycholinguistics
+  - voice activity detection

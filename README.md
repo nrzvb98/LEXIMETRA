@@ -257,6 +257,7 @@ black box behind one service — see [Automatic analysis](#automatic-analysis).
 ```text
 LEXIMETRA/
   README.md
+  CITATION.cff
   pyproject.toml
   .gitignore
   docs/
@@ -379,8 +380,54 @@ do not hand-edit `src/leximetra/processing/silero/`.
 ### Reference
 
 - **`CHANGELOG.md`** — User-visible changes per release.
+- **`CITATION.cff`** — Machine-readable citation metadata; drives GitHub's
+  *Cite this repository* button.
 - **`docs/output_schema.md`** — The canonical CSV output schema: columns, value
   encoding, how absent values round-trip, and what is validated on load.
+
+## Citing LEXIMETRA
+
+If LEXIMETRA contributed to published work, cite **the release you actually ran**,
+not the repository in general — the pipeline can change between versions, so a
+bare repository URL does not identify what produced a given set of reaction times.
+
+To check which version is installed:
+
+```bash
+python -c "import importlib.metadata as m; print(m.version('leximetra'))"
+```
+
+### In a reference list
+
+APA style, substituting the version and year of the release you used:
+
+> Nauryzbayeva, A. (2026). *LEXIMETRA* (Version 0.2.0) [Computer software].
+> https://github.com/nrzvb98/LEXIMETRA
+
+### BibTeX
+
+```bibtex
+@software{nauryzbayeva_leximetra_2026,
+  author  = {Nauryzbayeva, Aisara},
+  title   = {{LEXIMETRA}},
+  version = {0.2.0},
+  year    = {2026},
+  url     = {https://github.com/nrzvb98/LEXIMETRA},
+  license = {MIT}
+}
+```
+
+### In the text
+
+Name the version where you describe how the reaction times were obtained:
+
+> Reaction times were extracted with LEXIMETRA v0.2.0 (Nauryzbayeva, 2026) — beep
+> detection, per-trial slicing, and Silero VAD speech-onset marking — and every
+> trial was then checked and corrected by hand in the application's trial editor.
+
+`CITATION.cff` at the top of this repository holds the same metadata in
+machine-readable form. GitHub's *Cite this repository* button reads it, and most
+reference managers can import it directly.
 
 ## License
 

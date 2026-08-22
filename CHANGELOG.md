@@ -17,6 +17,8 @@ Pipeline: 1.2.0.
 ### Added
 
 - LEXIMETRA name and application icon.
+- `CITATION.cff` and a README *Citing LEXIMETRA* section, so published work
+  can name the exact version that produced its reaction times.
 - Beeps too quiet for the detector's trigger are recovered: candidates are
   found by matched filter and confirmed exactly against the beep template
   before acceptance. The status bar reports how many quiet beeps were
