@@ -5,16 +5,20 @@ Outputs of the HALA processing pipeline for `examples/audio/trial_sample.m4a`
 vendored copy in `src/leximetra/processing/` still reproduces the validated
 pipeline.
 
-**The recording is not in this repository.** It is a real voice recording, and
-this repository is public, so it is gitignored and kept locally at
-`examples/audio/trial_sample.m4a`. These baselines — timings only, nothing
-identifying — are committed. With the recording present the gate runs; without
-it, `test_processing_regression.py` skips itself.
+**Neither the recording nor these baselines are in this repository — only this
+file is.** Both are the sample session's data: a real voice recording, and the
+timings derived from it. This repository is public, so both are gitignored and
+kept locally, the recording at `examples/audio/trial_sample.m4a` and the
+baselines beside this README. With them present the gate runs; without them,
+`tests/test_processing_regression.py` skips itself, which is what a fresh clone
+does.
 
 **Generated from upstream, before vendoring** — `Hala_Processing` at commit
 `675eeea`, package version 1.0.0, on 2026-08-12. That ordering is the point: a
 baseline generated from the vendored copy would only catch future drift, not a
 mistake made during the copy itself.
+
+The data files, when present locally:
 
 | File | Contents |
 |---|---|
@@ -26,11 +30,16 @@ mistake made during the copy itself.
 Slices are hashed rather than committed: they are 12 WAVs of generated audio,
 and a hash catches drift just as well as the bytes would.
 
-These files double as the worked example of what the pipeline produces:
-`examples/audio/trial_sample.m4a` in, these out. (An older copy of the export
-lived at `examples/outputs/`; it predated the 2026-08-12 re-baseline, carried
-`segments_count` as all zeros, and was removed rather than left to contradict
-this one.)
+They double as the worked example of what the pipeline produces:
+`examples/audio/trial_sample.m4a` in, these out.
+
+## Obtaining them
+
+They cannot be regenerated from this repository, by design — see the provenance
+note above. Ask the maintainer for the session data, or re-derive a baseline of
+your own from upstream `Hala_Processing` against a recording you hold, and
+re-baseline as below. A baseline generated from the vendored copy would only
+catch future drift, which is the weaker gate.
 
 ## Scope
 

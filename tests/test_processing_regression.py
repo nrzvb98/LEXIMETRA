@@ -15,8 +15,9 @@ Skipped when the ``processing`` extra is not installed:
 
     python -m pip install -e ".[processing]"
 
-...and skipped when the sample recording is absent, which is the normal state of
-a fresh clone.
+...and skipped when the recording or the frozen baselines are absent, which is
+the normal state of a fresh clone: both are the sample session's data and are
+kept locally rather than distributed. See ``tests/data/processing_baseline/``.
 """
 
 import filecmp
@@ -58,6 +59,20 @@ def sample_audio():
 
 
 @pytest.fixture(scope="module")
+def frozen_baseline():
+    """The baseline directory, or a skip when its data is not present locally.
+
+    The baselines are the sample session's derived timings, so they are kept
+    beside the recording rather than distributed -- a fresh clone has the README
+    explaining them and none of the data.
+    """
+    missing = [n for n in (*CSV_NAMES, "slices.sha256") if not (BASELINE_DIR / n).is_file()]
+    if missing:
+        pytest.skip(f"frozen baseline data missing: {', '.join(missing)}")
+    return BASELINE_DIR
+
+
+@pytest.fixture(scope="module")
 def pipeline_output(sample_audio, tmp_path_factory):
     """Run the vendored pipeline once; every assertion reads the same run."""
     output_dir = tmp_path_factory.mktemp("vendored_run")
@@ -66,12 +81,11 @@ def pipeline_output(sample_audio, tmp_path_factory):
 
 
 @pytest.mark.parametrize("csv_name", CSV_NAMES)
-def test_csv_matches_frozen_baseline(pipeline_output, csv_name):
+def test_csv_matches_frozen_baseline(pipeline_output, frozen_baseline, csv_name):
     produced = pipeline_output / csv_name
-    baseline = BASELINE_DIR / csv_name
+    baseline = frozen_baseline / csv_name
 
     assert produced.is_file(), f"pipeline did not write {csv_name}"
-    assert baseline.is_file(), f"missing baseline {baseline}"
 
     if not filecmp.cmp(baseline, produced, shallow=False):
         expected = baseline.read_text().splitlines()
@@ -90,9 +104,9 @@ def test_csv_matches_frozen_baseline(pipeline_output, csv_name):
         )
 
 
-def test_slices_match_frozen_hashes(pipeline_output):
+def test_slices_match_frozen_hashes(pipeline_output, frozen_baseline):
     expected = {}
-    for line in (BASELINE_DIR / "slices.sha256").read_text().splitlines():
+    for line in (frozen_baseline / "slices.sha256").read_text().splitlines():
         if line.strip():
             digest, name = line.split(maxsplit=1)
             expected[name.strip()] = digest

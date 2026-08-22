@@ -37,9 +37,12 @@ dist/
 # repository -- keep your local copy at examples/audio/trial_sample.m4a and the
 # gate runs; without it those tests skip themselves.
 
-# Source assets and test fixtures, not user data. The beep templates drive
-# detection (the vendored pipeline cannot run without them) and the frozen
-# baseline is what proves that pipeline was vendored faithfully. The baseline is
-# timings only -- no audio, nothing identifying.
+# Source assets, not user data: the beep templates drive detection, and the
+# vendored pipeline cannot run without them.
 !src/leximetra/processing/templates/*.wav
-!tests/data/**/*.csv
+
+# The frozen baselines are the sample session's derived timings -- the same data
+# as the recording itself, so they live beside it locally rather than shipping
+# here. Only the README, which explains what they are, is distributed.
+tests/data/processing_baseline/*
+!tests/data/processing_baseline/README.md
