@@ -15,7 +15,7 @@ Vendored pipeline: 1.2.0 (upstream `8970af9`).
 
 ### Added
 
-- LEXIMETRA name and application icon (previously "HALA RT").
+- LEXIMETRA name and application icon.
 - Beeps too quiet for the detector's trigger are recovered: candidates are
   found by matched filter and confirmed exactly against the beep template
   before acceptance. The status bar reports how many quiet beeps were
@@ -23,24 +23,23 @@ Vendored pipeline: 1.2.0 (upstream `8970af9`).
 
 ### Changed
 
-- Nothing the app writes carries `HALA` any more. For a recording `p001.m4a`:
-  the CSV is `p001_output.csv` (was `p001_hala_output.csv`), the artifacts
-  folder is `p001_output/` (was `p001_hala/`), and inside it are `Slices/`
-  (was `HALA_Slices/`) and `p001_Full_Analysis_Results.csv` /
-  `p001_Analysis_Results.csv` (both previously `_HALA_` infixed). Backups and
-  Save-As copies follow the CSV.
-- Recordings analysed by an earlier release keep working: with no
-  `p001_output.csv` but a `p001_hala_output.csv` present, the app loads the
-  legacy file and keeps using that name for that recording — backups and
-  edited copies included — so one recording's files never split across two
-  naming schemes. Nothing needs renaming by hand.
-- The import package is `leximetra`, not `hala_rt`. The distribution and the
-  `leximetra` command were already named that; only the import path lagged.
-- Environment variables are `LEXIMETRA_*`, not `HALA_*` — including
+- Every artifact the app writes is renamed. For a recording `p001.m4a` it now
+  writes `p001_output.csv` and a `p001_output/` folder holding `Slices/`,
+  `p001_Full_Analysis_Results.csv` and `p001_Analysis_Results.csv`. Backups
+  and Save-As copies follow the CSV, as `p001_output_backup.csv` and
+  `p001_output_edited.csv`.
+- Recordings analysed by 0.2.x keep working. Where one has only its original
+  CSV and not the new one, the app loads that file and keeps using its name
+  for that recording — backups and edited copies included — so a single
+  recording's files never split across two naming schemes. Nothing needs
+  renaming by hand.
+- The import package is `leximetra`. The distribution and the `leximetra`
+  command were already named that; only the import path lagged.
+- Environment variables now take the `LEXIMETRA_` prefix, including
   `LEXIMETRA_FFMPEG_DIR` and `LEXIMETRA_BUNDLE_FFMPEG`, which the Windows
   build documents.
-- The `hala-rt` console script is gone. `leximetra` is the only entry point,
-  so shells and notes that still call `hala-rt` will need updating.
+- The legacy console-script alias is gone. `leximetra` is the only entry
+  point, so shells and notes still calling the old command need updating.
 
 ### Fixed
 
@@ -55,9 +54,10 @@ Vendored pipeline: 1.2.0 (upstream `8970af9`).
 
 ### Note for external tooling
 
-Tooling that globs `*_hala_output.csv` will not see CSVs written under the new
-name, and anything reading `<recording>_hala/HALA_Slices/` should read
-`<recording>_output/Slices/` instead.
+Anything that matched the 0.2.x artifact names needs repointing: the output
+CSV is `<recording>_output.csv` and the per-trial audio is in
+`<recording>_output/Slices/`. Scripts reading only CSVs already written by
+0.2.x are unaffected — those files keep their original names.
 
 ## 0.2.0 — 2026-08-12
 
