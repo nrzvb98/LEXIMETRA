@@ -1,17 +1,17 @@
-"""End-to-end HALA processing: audio in, three CSVs out.
+"""End-to-end LEXIMETRA processing: audio in, three CSVs out.
 
     from leximetra.processing import process_audio, LeximetraConfig
     result = process_audio("recording.m4a", LeximetraConfig(), output_dir="out")
-    result.df_output          # software-format table (…_hala_output.csv)
+    result.df_output          # software-format table (…_output.csv)
 
 Outputs written to `output_dir` (default: current directory):
-    HALA_Slices/Trial_NNN.wav             per-trial audio (starts at beep END)
-    <stem>_HALA_Full_Analysis_Results.csv absolute timings, one row per trial
-    <stem>_HALA_Analysis_Results.csv      RT/hesitation summary subset
-    <stem>_hala_output.csv                software-format export
+    Slices/Trial_NNN.wav             per-trial audio (starts at beep END)
+    <stem>_Full_Analysis_Results.csv absolute timings, one row per trial
+    <stem>_Analysis_Results.csv      RT/hesitation summary subset
+    <stem>_output.csv                software-format export
     <stem>_beep_pairing_report.csv        only if some beep did not pair 1:1
 
-The pre-existing HALA_Slices folder under `output_dir` is removed before
+The pre-existing Slices folder under `output_dir` is removed before
 slicing (it is a generated artifact of this pipeline); nothing else is deleted.
 """
 from __future__ import annotations
@@ -27,7 +27,7 @@ from . import beeps as beeps_mod
 from . import metrics as metrics_mod
 from .config import LeximetraConfig
 from .audio_io import load_audio_app_style
-from .export import save_hala_software_csv
+from .export import save_software_csv
 from .vad import get_model, get_trial_speech_timestamps, read_audio_safe
 
 logger = logging.getLogger("leximetra.processing")
@@ -52,7 +52,7 @@ FINAL_COLUMNS = [
 class LeximetraResult:
     df_full: pd.DataFrame        # absolute timings per trial (Full_Analysis CSV)
     df_analysis: pd.DataFrame    # summary subset (Analysis CSV)
-    df_output: pd.DataFrame      # software-format export (hala_output CSV)
+    df_output: pd.DataFrame      # software-format export (output CSV)
     slice_dir: Path
     csv_paths: dict[str, Path]   # keys: full, analysis, output (+ pairing_report), empty if not written
     beep_anomalies: list[dict] = field(default_factory=list)  # beeps that did not pair 1:1
@@ -66,7 +66,7 @@ def process_audio(
     on_progress=None,
     write_outputs: bool = True,
 ) -> LeximetraResult:
-    """Run the full HALA pipeline on one recording.
+    """Run the full LEXIMETRA pipeline on one recording.
 
     model: optional preloaded (silero_model, get_speech_ts) tuple from
         leximetra.processing.vad.get_model(), so a host app can load Silero once.
@@ -101,7 +101,7 @@ def process_audio(
     if rescued_beeps:
         valid_beeps = sorted(valid_beeps + rescued_beeps)
 
-    slice_dir = output_dir / "HALA_Slices"
+    slice_dir = output_dir / "Slices"
     if slice_dir.exists():
         shutil.rmtree(slice_dir)
     slice_files = beeps_mod.slice_trials(y, sr, valid_beeps, slice_dir, cfg)
@@ -211,13 +211,13 @@ def process_audio(
     csv_paths: dict[str, Path] = {}
     df_output = None
     if write_outputs:
-        full_path = output_dir / f"{stem}_HALA_Full_Analysis_Results.csv"
-        analysis_path = output_dir / f"{stem}_HALA_Analysis_Results.csv"
-        output_path = output_dir / f"{stem}_hala_output.csv"
+        full_path = output_dir / f"{stem}_Full_Analysis_Results.csv"
+        analysis_path = output_dir / f"{stem}_Analysis_Results.csv"
+        output_path = output_dir / f"{stem}_output.csv"
 
         df_final_results.to_csv(full_path, index=False)
         df_analysis.to_csv(analysis_path, index=False)
-        save_hala_software_csv(
+        save_software_csv(
             df_export_input,
             audio_path=audio_path,
             output_path=output_path,
@@ -237,8 +237,8 @@ def process_audio(
             csv_paths["pairing_report"] = report_path
             logger.warning("Wrote %s (%d anomalies)", report_path.name, len(beep_anomalies))
     else:
-        from .export import build_hala_software_export
-        df_output = build_hala_software_export(
+        from .export import build_software_export
+        df_output = build_software_export(
             df_export_input,
             audio_path=audio_path,
             anticipatory_threshold_ms=cfg.ANTICIPATORY_THRESHOLD_MS,

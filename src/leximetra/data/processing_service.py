@@ -1,4 +1,4 @@
-"""Run the HALA pipeline on a recording and place its output for the app.
+"""Run the LEXIMETRA pipeline on a recording and place its output for the app.
 
 Sits between the controller and ``leximetra.processing``: the controller asks for
 one recording to be processed and gets back a typed outcome, never an
@@ -18,9 +18,6 @@ Artifact layout for ``/sessions/p001.m4a``::
         Slices/Trial_NNN.wav
         p001_Full_Analysis_Results.csv
         p001_Analysis_Results.csv
-
-The pipeline writes those three under upstream's ``HALA_`` names; this module
-renames them after the run, so the layout above is what actually lands on disk.
 """
 
 import importlib.util
@@ -31,7 +28,6 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from .output_paths import (
-    CSV_SUFFIX,
     default_output_path,
     next_backup_output_path,
     processing_sidecar_dir,
@@ -39,22 +35,6 @@ from .output_paths import (
 
 
 REQUIRED_MODULES = ("torch", "torchaudio", "pandas", "scipy")
-
-# The vendored pipeline names its export ``<stem>_hala_output.csv``; that name
-# is upstream's, not this app's, and changes only via tools/sync_processing.py.
-PIPELINE_EXPORT_SUFFIX = "_hala_output"
-
-# The pipeline's remaining artifacts carry upstream's HALA_ prefix too. Dropping
-# it at the source would mean editing Hala_Processing and re-vendoring, which
-# would move the pipeline off the exact commit this app was measured against, so
-# the app renames them in the sidecar once the run is over instead. Nothing reads
-# these back -- they exist for the user to open.
-PIPELINE_SLICE_DIR = "HALA_Slices"
-SLICE_DIR = "Slices"
-PIPELINE_RESULT_RENAMES = {
-    "_HALA_Full_Analysis_Results": "_Full_Analysis_Results",
-    "_HALA_Analysis_Results": "_Analysis_Results",
-}
 
 
 class ProcessingStatus(Enum):
@@ -128,33 +108,6 @@ def _describe_failure(error):
     return ProcessingStatus.ERROR, text or error.__class__.__name__
 
 
-def _drop_hala_prefix(sidecar, stem):
-    """Rename the pipeline's HALA_-prefixed artifacts inside the sidecar.
-
-    Best-effort on purpose. These are files the user opens, never files the app
-    reads back, so a rename that fails should cost a cosmetic name rather than a
-    finished analysis -- upstream's names simply stay in that case.
-    """
-    try:
-        produced_slices = sidecar / PIPELINE_SLICE_DIR
-        if produced_slices.is_dir():
-            # The pipeline clears a stale HALA_Slices before each run, but it
-            # knows nothing about the renamed one, so an earlier run's Slices/
-            # is still sitting here -- and replace() will not overwrite a
-            # directory that has anything in it.
-            shutil.rmtree(sidecar / SLICE_DIR, ignore_errors=True)
-            produced_slices.replace(sidecar / SLICE_DIR)
-
-        for produced_suffix, renamed_suffix in PIPELINE_RESULT_RENAMES.items():
-            produced = sidecar / f"{stem}{produced_suffix}{CSV_SUFFIX}"
-            if produced.is_file():
-                produced.replace(sidecar / f"{stem}{renamed_suffix}{CSV_SUFFIX}")
-    except OSError:
-        # Same filesystem, in a directory this run just wrote, so this is close
-        # to impossible -- but not worth losing the run over.
-        pass
-
-
 def run_processing(
     audio_path,
     on_progress: Optional[Callable[[str, int, int], None]] = None,
@@ -223,11 +176,9 @@ def run_processing(
         status, message = _describe_failure(error)
         return ProcessingOutcome(status=status, message=message, sidecar_dir=sidecar)
 
-    _drop_hala_prefix(sidecar, audio_path.stem)
-
     # The pipeline names its export after the recording, which is not
     # necessarily what the caller wants the CSV called.
-    produced_csv = sidecar / f"{audio_path.stem}{PIPELINE_EXPORT_SUFFIX}{CSV_SUFFIX}"
+    produced_csv = default_output_path(audio_path, output_dir=sidecar)
     if not produced_csv.is_file():
         return ProcessingOutcome(
             status=ProcessingStatus.ERROR,

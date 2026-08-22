@@ -1,4 +1,4 @@
-"""Software-format HALA CSV export (absorbed from hala_output_export.py).
+"""Software-format LEXIMETRA CSV export (absorbed from hala_output_export.py).
 
 Trial windows tile the recording: each trial starts where the previous ended,
 and ends `next_beep_margin_s` before the next beep (audio duration, probed via
@@ -107,7 +107,7 @@ def _trial_windows(
     return starts, ends
 
 
-def build_hala_software_export(
+def build_software_export(
     final_results: pd.DataFrame,
     audio_path: str | Path = "trial.m4a",
     anticipatory_threshold_ms: float = 150.0,
@@ -117,7 +117,7 @@ def build_hala_software_export(
     required_columns = {"trial_name", "beep_timestamp_global", "rt_first_speech_ms", "rt_main_response_ms"}
     missing = required_columns - set(final_results.columns)
     if missing:
-        raise ValueError(f"Missing required columns for HALA export: {sorted(missing)}")
+        raise ValueError(f"Missing required columns for LEXIMETRA export: {sorted(missing)}")
 
     export = final_results.copy()
     export["trial_index"] = [
@@ -178,7 +178,7 @@ def build_hala_software_export(
     return formatted[OUTPUT_COLUMNS]
 
 
-def save_hala_software_csv(
+def save_software_csv(
     final_results: pd.DataFrame,
     audio_path: str | Path = "trial.m4a",
     output_path: str | Path | None = None,
@@ -186,9 +186,9 @@ def save_hala_software_csv(
 ) -> Path:
     audio_path = Path(audio_path)
     if output_path is None:
-        output_path = audio_path.with_name(f"{audio_path.stem}_hala_output.csv")
+        output_path = audio_path.with_name(f"{audio_path.stem}_output.csv")
 
     output_path = Path(output_path)
-    export = build_hala_software_export(final_results, audio_path=audio_path, **kwargs)
+    export = build_software_export(final_results, audio_path=audio_path, **kwargs)
     export.to_csv(output_path, index=False)
     return output_path

@@ -27,15 +27,11 @@ SAMPLE_AUDIO = PROJECT_ROOT / "examples" / "audio" / "trial_sample.m4a"
 BASELINE_DIR = PROJECT_ROOT / "tests" / "data" / "processing_baseline"
 STEM = SAMPLE_AUDIO.stem
 
-# The pipeline is upstream's, so it still writes upstream's names; the frozen
-# copies here carry this app's. Mapping rather than renaming the produced side
-# keeps the gate asserting what it always did -- that the bytes match -- while
-# recording, in one place, exactly which name the pipeline emits.
-CSV_NAMES = {
-    f"{STEM}_HALA_Full_Analysis_Results.csv": f"{STEM}_Full_Analysis_Results.csv",
-    f"{STEM}_HALA_Analysis_Results.csv": f"{STEM}_Analysis_Results.csv",
-    f"{STEM}_hala_output.csv": f"{STEM}_output.csv",
-}
+CSV_NAMES = [
+    f"{STEM}_Full_Analysis_Results.csv",
+    f"{STEM}_Analysis_Results.csv",
+    f"{STEM}_output.csv",
+]
 
 pytestmark = pytest.mark.slow
 
@@ -55,10 +51,10 @@ def pipeline_output(tmp_path_factory):
     return output_dir
 
 
-@pytest.mark.parametrize("csv_name,baseline_name", sorted(CSV_NAMES.items()))
-def test_csv_matches_frozen_baseline(pipeline_output, csv_name, baseline_name):
+@pytest.mark.parametrize("csv_name", CSV_NAMES)
+def test_csv_matches_frozen_baseline(pipeline_output, csv_name):
     produced = pipeline_output / csv_name
-    baseline = BASELINE_DIR / baseline_name
+    baseline = BASELINE_DIR / csv_name
 
     assert produced.is_file(), f"pipeline did not write {csv_name}"
     assert baseline.is_file(), f"missing baseline {baseline}"
@@ -87,7 +83,7 @@ def test_slices_match_frozen_hashes(pipeline_output):
             digest, name = line.split(maxsplit=1)
             expected[name.strip()] = digest
 
-    slice_dir = pipeline_output / "HALA_Slices"
+    slice_dir = pipeline_output / "Slices"
     produced = sorted(slice_dir.glob("*.wav"))
 
     assert {p.name for p in produced} == set(expected), (
@@ -128,7 +124,7 @@ def test_service_places_real_pipeline_output(tmp_path):
     assert len(list((sidecar / "Slices").glob("*.wav"))) == 12
     assert (sidecar / "session_Full_Analysis_Results.csv").is_file()
     assert (sidecar / "session_Analysis_Results.csv").is_file()
-    assert not (sidecar / "session_hala_output.csv").exists()
+    assert not (sidecar / "session_output.csv").exists()
 
     assert {stage for stage, _, _ in stages} == {"load", "slices", "vad", "export"}
 
@@ -172,7 +168,7 @@ def test_output_csv_loads_through_the_app(pipeline_output):
     from leximetra.data.csv_io import load_output_csv
     from leximetra.ui.main_window import LeximetraMainWindow
 
-    trials = load_output_csv(pipeline_output / f"{STEM}_hala_output.csv")
+    trials = load_output_csv(pipeline_output / f"{STEM}_output.csv")
 
     assert trials, "pipeline produced no trials"
     for trial in trials:

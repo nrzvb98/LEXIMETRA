@@ -12,11 +12,11 @@ from .pipeline import process_audio
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         prog="leximetra.processing",
-        description="HALA reaction-time pipeline: audio in, per-trial RT/hesitation CSVs out.",
+        description="LEXIMETRA reaction-time pipeline: audio in, per-trial RT/hesitation CSVs out.",
     )
     parser.add_argument("input", nargs="?", help="Audio file (.wav/.m4a/.mp3/.flac)")
     parser.add_argument("-o", "--output-dir", default=".",
-                        help="Directory for CSVs and HALA_Slices/ (default: current directory)")
+                        help="Directory for CSVs and Slices/ (default: current directory)")
     parser.add_argument("--config", help="JSON config file (see --dump-config)")
     parser.add_argument("--dump-config", action="store_true",
                         help="Print the default configuration as JSON and exit")

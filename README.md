@@ -209,19 +209,18 @@ Audio and the data model are independent, GUI-agnostic layers.
 The analysis pipeline is a *vendored copy* of a separate project and is treated
 as a black box behind one service — see [Automatic analysis](#automatic-analysis).
 
-> **A note on names.** The product is LEXIMETRA; the Python package is still
-> `leximetra`. Since the `_output` rename the app writes neutral artifact names — the
-> `<stem>_output.csv` CSV and `<stem>_output/` sidecar folder — and falls back
-> to reading a legacy `<stem>_hala_output.csv` where one exists, so the
-> existing corpus keeps loading. The vendored pipeline still writes its own
-> artifacts under upstream's names (`HALA_Slices/`, the `HALA_*_Results.csv`
-> files); the service renames them to `Slices/` and `<stem>_*_Results.csv` once
-> the run is over, so the sidecar carries no `HALA_` names on disk. The
-> pipeline sources are left alone deliberately — editing them means changing
-> `Hala_Processing` and re-vendoring, which would move the pipeline off the
-> commit this app was measured against. The `leximetra` package name and the
-> `HALA_*` environment variables are unchanged. Study tooling that globs
-> `*_hala_output.csv` will not see CSVs the app writes under the new name.
+> **A note on names.** Nothing this app writes carries `HALA` any more: the
+> `<stem>_output.csv` CSV, the `<stem>_output/` sidecar, and inside it
+> `Slices/` and the two `<stem>_*_Results.csv` files. The vendored pipeline
+> produces those names itself — `tools/sync_processing.py` rewrites upstream's
+> branding on the way in, so the pipeline sources are still generated rather
+> than hand-edited, and still derive from a named upstream commit.
+>
+> Two `hala` names survive on purpose. A legacy `<stem>_hala_output.csv` is
+> still read where one exists, so recordings verified under 0.2.x keep loading.
+> And `Hala_Processing` is the upstream repo's actual name, which this repo
+> only refers to. Study tooling that globs `*_hala_output.csv` will not see
+> CSVs written under the new name.
 
 ```text
 LEXIMETRA/

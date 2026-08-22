@@ -1,4 +1,4 @@
-"""HALA reaction-time pipeline: beep detection -> trial slicing -> Silero VAD
+"""LEXIMETRA reaction-time pipeline: beep detection -> trial slicing -> Silero VAD
 -> RT/hesitation metrics -> CSV export.
 
 Extracted from hala_proc.ipynb (Template Matched v5.3); outputs are

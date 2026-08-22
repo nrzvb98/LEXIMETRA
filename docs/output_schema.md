@@ -23,8 +23,8 @@ Rows are produced two ways, and the schema is identical either way:
 
 - **Automatic analysis** — the vendored pipeline writes this file when a
   recording is loaded (see the README's *Automatic analysis* section). It is
-  also the pipeline's own `<stem>_hala_output.csv` export format, which is why
-  the two match column for column.
+  also the pipeline's own `<stem>_output.csv` export format, which is why the
+  two match column for column.
 - **By hand** — trials cut in the app, or an existing CSV corrected in the
   output table and saved.
 

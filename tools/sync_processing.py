@@ -49,11 +49,29 @@ _RENAMES = (
     # something more descriptive would be an editorial change to code this
     # repo does not own, and would not survive comparison with upstream.
     (re.compile(r"\bHala(?=(?:Config|Result)\b)"), "Leximetra"),
-    # The one environment variable the pipeline reads. Named exactly rather
-    # than by a `HALA_` prefix rule, which would also catch HALA_Slices and the
-    # HALA_*_Results filenames -- those are output names the pipeline writes and
-    # the service renames on disk, so they have to survive the transform.
+    # The one environment variable the pipeline reads.
     (re.compile(r"\bHALA_SILERO_DIR\b"), "LEXIMETRA_SILERO_DIR"),
+    # The names it gives the artifacts it writes. Renaming them here rather
+    # than on disk afterwards means the pipeline lands the final layout itself
+    # -- including clearing its own stale slice directory between runs, which
+    # an after-the-fact rename had to reimplement.
+    (re.compile(r"\bHALA_Slices\b"), "Slices"),
+    (re.compile(r"\b_HALA_Full_Analysis_Results\b"), "_Full_Analysis_Results"),
+    (re.compile(r"\b_HALA_Analysis_Results\b"), "_Analysis_Results"),
+    (re.compile(r"\b_hala_output\b"), "_output"),
+    # Two internal helpers. The brand is dropped rather than swapped: what is
+    # left already says what they do, and `build_leximetra_software_export`
+    # would be worse than either name.
+    (re.compile(r"\bbuild_hala_software_export\b"), "build_software_export"),
+    (re.compile(r"\bsave_hala_software_csv\b"), "save_software_csv"),
+    # Prose. `\bHALA\b` cannot reach HALA_RT_v1 or HALA_Pipeline_Spec, which
+    # name a real directory and a real upstream document -- `_` is a word
+    # character, so there is no boundary after HALA in either.
+    (re.compile(r"\bHALA\b"), "LEXIMETRA"),
+    # The stale half of the export name, in comments that outlived the file.
+    # `hala_output_export.py` is a real upstream file and is left alone: there
+    # is no word boundary before its `_export`.
+    (re.compile(r"\bhala_output\b"), "output"),
 )
 
 

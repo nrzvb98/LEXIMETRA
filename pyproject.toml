@@ -37,8 +37,6 @@ processing = [
 
 [project.scripts]
 leximetra = "leximetra.app:main"
-# Kept so existing shells and notes that call `hala-rt` still work.
-hala-rt = "leximetra.app:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

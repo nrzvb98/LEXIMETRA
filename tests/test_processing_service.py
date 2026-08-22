@@ -8,6 +8,7 @@ exceptions. Faking the pipeline keeps these tests fast and runnable without the
 """
 
 import csv
+import shutil
 
 import pytest
 
@@ -63,11 +64,14 @@ def fake_pipeline(
                 on_progress(*stage)
         if raises is not None:
             raise raises
-        slices = output_dir / "HALA_Slices"
-        slices.mkdir(exist_ok=True)
+        slices = output_dir / "Slices"
+        # The real pipeline clears this before each run; mirror it, so a test
+        # that reprocesses sees the same behaviour it would in production.
+        shutil.rmtree(slices, ignore_errors=True)
+        slices.mkdir()
         (slices / "Trial_001.wav").write_bytes(b"fake audio")
-        (output_dir / f"{audio_path.stem}_HALA_Analysis_Results.csv").write_text("analysis")
-        write_output_csv(output_dir / f"{audio_path.stem}_hala_output.csv", trial_count)
+        (output_dir / f"{audio_path.stem}_Analysis_Results.csv").write_text("analysis")
+        write_output_csv(output_dir / f"{audio_path.stem}_output.csv", trial_count)
         return FakeResult(trial_count, beep_anomalies)
 
     return process_audio
@@ -194,41 +198,13 @@ def test_pipeline_artifacts_stay_in_the_sidecar(audio, pipeline):
     assert outcome.sidecar_dir == sidecar
     assert (sidecar / "Slices" / "Trial_001.wav").is_file()
     assert (sidecar / "session_Analysis_Results.csv").is_file()
-    # Moved, not copied: one editable copy of the export, not two. The export
-    # keeps the pipeline's own name until the move renames it.
-    assert not (sidecar / "session_hala_output.csv").exists()
+    # Moved, not copied: one editable copy of the export, not two.
+    assert not (sidecar / "session_output.csv").exists()
     assert sorted(p.name for p in audio.parent.iterdir()) == [
         "session.m4a",
         "session_output",
         "session_output.csv",
     ]
-
-
-def test_upstream_artifact_names_do_not_survive(audio, pipeline):
-    pipeline(fake_pipeline())
-
-    run_processing(audio)
-
-    sidecar = audio.parent / "session_output"
-    assert not (sidecar / "HALA_Slices").exists()
-    assert not (sidecar / "session_HALA_Analysis_Results.csv").exists()
-
-
-def test_reprocessing_replaces_the_previous_slices(audio, pipeline):
-    pipeline(fake_pipeline())
-    run_processing(audio)
-
-    # The pipeline clears its own HALA_Slices before each run but knows nothing
-    # about the renamed one, so without help the first run's trials would sit
-    # alongside the second run's -- and the rename onto a non-empty directory
-    # would fail outright.
-    stale = audio.parent / "session_output" / "Slices" / "Trial_999.wav"
-    stale.write_bytes(b"from the earlier run")
-
-    run_processing(audio)
-
-    assert not stale.exists()
-    assert (audio.parent / "session_output" / "Slices" / "Trial_001.wav").is_file()
 
 
 def test_existing_csv_is_backed_up_not_overwritten(audio, pipeline):
@@ -329,7 +305,7 @@ def test_missing_export_is_an_error_not_a_crash(audio, pipeline):
     outcome = run_processing(audio)
 
     assert outcome.status is ProcessingStatus.ERROR
-    assert "session_hala_output.csv" in outcome.message
+    assert "session_output.csv" in outcome.message
 
 
 def test_output_path_can_be_overridden(audio, pipeline, tmp_path):

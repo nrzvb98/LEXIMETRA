@@ -1,4 +1,4 @@
-"""Single configuration surface for the HALA pipeline.
+"""Single configuration surface for the LEXIMETRA pipeline.
 
 Field names deliberately keep the UPPER_CASE names used in hala_proc.ipynb and
 HALA_Pipeline_Spec so values can be cross-referenced 1:1. Values here are the
