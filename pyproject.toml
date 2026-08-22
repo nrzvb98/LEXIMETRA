@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,6 +7,9 @@ name = "leximetra"
 version = "0.2.0"
 description = "Automatic trial analysis and reaction-time verification for speech recordings"
 readme = "README.md"
+license = "MIT"
+# The vendored Silero VAD is MIT too; ship its notice with the distribution.
+license-files = ["LICENSE", "src/leximetra/processing/silero/LICENSE"]
 requires-python = ">=3.11"
 dependencies = [
     "PyQt6",

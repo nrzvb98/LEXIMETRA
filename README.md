@@ -359,3 +359,12 @@ later drift. See that directory's README for scope and re-baselining.
 - **`docs/integration_plan.md`** — How automatic analysis was integrated: the
   decisions taken, the corrections made along the way, and what is deliberately
   left undone (Windows and Intel builds, the ONNX size optimization).
+
+## License
+
+Released under the [MIT License](LICENSE).
+
+The bundled Silero VAD model in `src/leximetra/processing/silero/` is MIT-licensed
+by the Silero Team and carries its own `LICENSE` alongside it. The packaged macOS
+and Windows apps additionally ship an LGPL-oriented FFmpeg build, whose license
+notices are copied into the bundle under `Resources/licenses/ffmpeg/`.
