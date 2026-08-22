@@ -45,11 +45,21 @@ process_audio = pytest.importorskip(
 
 
 @pytest.fixture(scope="module")
-def pipeline_output(tmp_path_factory):
-    """Run the vendored pipeline once; every assertion reads the same run."""
+def sample_audio():
+    """The recording's bytes, or a skip when it is not present locally.
+
+    It is gitignored rather than distributed, so a fresh clone has no copy and
+    every test here has to stand down. Every such test takes this fixture --
+    reading ``SAMPLE_AUDIO`` directly would sidestep the guard and fail instead.
+    """
     if not SAMPLE_AUDIO.is_file():
         pytest.skip(f"sample recording missing: {SAMPLE_AUDIO}")
+    return SAMPLE_AUDIO.read_bytes()
 
+
+@pytest.fixture(scope="module")
+def pipeline_output(sample_audio, tmp_path_factory):
+    """Run the vendored pipeline once; every assertion reads the same run."""
     output_dir = tmp_path_factory.mktemp("vendored_run")
     process_audio(SAMPLE_AUDIO, output_dir=output_dir)
     return output_dir
@@ -103,7 +113,7 @@ def test_slices_match_frozen_hashes(pipeline_output):
     assert not mismatched, f"slice audio differs from baseline: {mismatched}"
 
 
-def test_service_places_real_pipeline_output(tmp_path):
+def test_service_places_real_pipeline_output(sample_audio, tmp_path):
     """The service's artifact layout, exercised against the real pipeline.
 
     ``test_processing_service.py`` covers this with the pipeline faked; this is
@@ -113,7 +123,7 @@ def test_service_places_real_pipeline_output(tmp_path):
     from leximetra.data.processing_service import ProcessingStatus, run_processing
 
     audio = tmp_path / "session.m4a"
-    audio.write_bytes(SAMPLE_AUDIO.read_bytes())
+    audio.write_bytes(sample_audio)
 
     stages = []
     outcome = run_processing(audio, on_progress=lambda *args: stages.append(args))
@@ -133,7 +143,7 @@ def test_service_places_real_pipeline_output(tmp_path):
     assert {stage for stage, _, _ in stages} == {"load", "slices", "vad", "export"}
 
 
-def test_loading_audio_analyzes_it_end_to_end(qapp, tmp_path, monkeypatch):
+def test_loading_audio_analyzes_it_end_to_end(qapp, sample_audio, tmp_path, monkeypatch):
     """The whole feature, unstubbed: load a recording, get verified trials.
 
     Everything else mocks something — the pipeline, the worker, or the
@@ -144,7 +154,7 @@ def test_loading_audio_analyzes_it_end_to_end(qapp, tmp_path, monkeypatch):
     from leximetra.ui.main_window import LeximetraMainWindow
 
     audio = tmp_path / "session.m4a"
-    audio.write_bytes(SAMPLE_AUDIO.read_bytes())
+    audio.write_bytes(sample_audio)
 
     window = LeximetraMainWindow()
     try:
