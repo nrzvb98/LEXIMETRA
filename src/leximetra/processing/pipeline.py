@@ -1,7 +1,7 @@
 """End-to-end HALA processing: audio in, three CSVs out.
 
-    from leximetra.processing import process_audio, HalaConfig
-    result = process_audio("recording.m4a", HalaConfig(), output_dir="out")
+    from leximetra.processing import process_audio, LeximetraConfig
+    result = process_audio("recording.m4a", LeximetraConfig(), output_dir="out")
     result.df_output          # software-format table (…_hala_output.csv)
 
 Outputs written to `output_dir` (default: current directory):
@@ -25,7 +25,7 @@ import pandas as pd
 
 from . import beeps as beeps_mod
 from . import metrics as metrics_mod
-from .config import HalaConfig
+from .config import LeximetraConfig
 from .audio_io import load_audio_app_style
 from .export import save_hala_software_csv
 from .vad import get_model, get_trial_speech_timestamps, read_audio_safe
@@ -49,7 +49,7 @@ FINAL_COLUMNS = [
 
 
 @dataclass
-class HalaResult:
+class LeximetraResult:
     df_full: pd.DataFrame        # absolute timings per trial (Full_Analysis CSV)
     df_analysis: pd.DataFrame    # summary subset (Analysis CSV)
     df_output: pd.DataFrame      # software-format export (hala_output CSV)
@@ -60,19 +60,19 @@ class HalaResult:
 
 def process_audio(
     audio_path: str | Path,
-    config: HalaConfig | None = None,
+    config: LeximetraConfig | None = None,
     output_dir: str | Path | None = None,
     model=None,
     on_progress=None,
     write_outputs: bool = True,
-) -> HalaResult:
+) -> LeximetraResult:
     """Run the full HALA pipeline on one recording.
 
     model: optional preloaded (silero_model, get_speech_ts) tuple from
         leximetra.processing.vad.get_model(), so a host app can load Silero once.
     on_progress: optional callable(stage: str, done: int, total: int).
     """
-    cfg = config or HalaConfig()
+    cfg = config or LeximetraConfig()
     audio_path = Path(audio_path)
     if not audio_path.is_file():
         raise FileNotFoundError(f"Source audio not found: {audio_path}")
@@ -247,7 +247,7 @@ def process_audio(
         )
 
     progress("export", 1, 1)
-    return HalaResult(
+    return LeximetraResult(
         df_full=df_final_results,
         df_analysis=df_analysis,
         df_output=df_output,

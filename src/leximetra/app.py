@@ -37,13 +37,13 @@ from leximetra.audio.manager import (
     AudioManager,
 )
 from leximetra.data.processing_service import processing_available
-from leximetra.ui.main_window import HALAMainWindow
+from leximetra.ui.main_window import LeximetraMainWindow
 
 
 def self_test():
     """Prove a packaged build can actually analyze, without opening a window.
 
-    Run by the macOS build script (``HALA_SELF_TEST=1``). Bundling breaks in
+    Run by the macOS build script (``LEXIMETRA_SELF_TEST=1``). Bundling breaks in
     ways no source-tree test can see -- a pruned torch directory, data files
     that did not get collected, a Silero copy that is missing -- and each of
     those only surfaces when a user loads a recording. This turns that into a
@@ -62,11 +62,11 @@ def self_test():
               "download it from GitHub on first use.")
         return 1
 
-    from leximetra.processing import HalaConfig
+    from leximetra.processing import LeximetraConfig
 
     missing = [
         str(path)
-        for path in HalaConfig().resolved_template_paths()
+        for path in LeximetraConfig().resolved_template_paths()
         if not path.is_file()
     ]
     if missing:
@@ -124,11 +124,11 @@ def main():
         print("⚠ Automatic analysis unavailable - trials must be cut manually")
         print('  Install with: pip install -e ".[processing]"\n')
 
-    if os.environ.get("HALA_SELF_TEST") == "1":
+    if os.environ.get("LEXIMETRA_SELF_TEST") == "1":
         return self_test()
 
     app = QApplication(sys.argv)
-    window = HALAMainWindow()
+    window = LeximetraMainWindow()
     window.show()
     return app.exec()
 

@@ -5,7 +5,7 @@ import argparse
 import logging
 import sys
 
-from .config import HalaConfig
+from .config import LeximetraConfig
 from .pipeline import process_audio
 
 
@@ -25,7 +25,7 @@ def main(argv=None) -> int:
     args = parser.parse_args(argv)
 
     if args.dump_config:
-        print(HalaConfig().to_json())
+        print(LeximetraConfig().to_json())
         return 0
     if not args.input:
         parser.error("input audio file is required (or use --dump-config)")
@@ -33,7 +33,7 @@ def main(argv=None) -> int:
     level = logging.WARNING if args.quiet else (logging.DEBUG if args.verbose else logging.INFO)
     logging.basicConfig(level=level, format="%(message)s")
 
-    cfg = HalaConfig.from_json(args.config) if args.config else HalaConfig()
+    cfg = LeximetraConfig.from_json(args.config) if args.config else LeximetraConfig()
     result = process_audio(args.input, cfg, output_dir=args.output_dir)
 
     if not args.quiet:

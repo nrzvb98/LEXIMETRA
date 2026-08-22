@@ -1,4 +1,4 @@
-"""Controller behaviour for :class:`HALAMainWindow`.
+"""Controller behaviour for :class:`LeximetraMainWindow`.
 
 Covers the trial state machine (add / delete / renumber / derive starts), the
 marker and RT maths, table-edit validation, dirty tracking, and the trial detail

@@ -15,7 +15,7 @@ _TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
 
 
 @dataclass
-class HalaConfig:
+class LeximetraConfig:
     # --- Audio ---
     TARGET_SR: int = 16000
 
@@ -148,7 +148,7 @@ class HalaConfig:
         return text
 
     @classmethod
-    def from_json(cls, path: str | Path) -> "HalaConfig":
+    def from_json(cls, path: str | Path) -> "LeximetraConfig":
         data = json.loads(Path(path).read_text())
         known = {f.name for f in dataclasses.fields(cls)}
         unknown = set(data) - known

@@ -74,7 +74,7 @@ and choose **Open** on first launch.
 
 Analysis is bundled only if torch is installed in the build environment;
 otherwise the script says so and builds a verification-only app (~53 MB). Before
-signing, the build runs the packaged binary with `HALA_SELF_TEST=1` and fails
+signing, the build runs the packaged binary with `LEXIMETRA_SELF_TEST=1` and fails
 unless it can import the pipeline, find the beep templates, and load the VAD
 model — bundling breaks in ways the test suite cannot see, and this stops those
 reaching a user.
@@ -255,8 +255,8 @@ LEXIMETRA/
   whether automatic analysis is available), creates the `QApplication`, and shows
   the main window. Degrades gracefully when optional backends are missing. Also
   holds `self_test()`, which the macOS build script runs against the packaged
-  binary (`HALA_SELF_TEST=1`) to prove a bundle can actually analyze.
-- **`src/leximetra/ui/main_window.py`** — `HALAMainWindow`, the controller. Owns session
+  binary (`LEXIMETRA_SELF_TEST=1`) to prove a bundle can actually analyze.
+- **`src/leximetra/ui/main_window.py`** — `LeximetraMainWindow`, the controller. Owns session
   state (the list of `TrialData`, the current trial index, unsaved-changes
   tracking, the output CSV path) and all behavior: playback timer and transport,
   global/trial cursor handling, trial add/delete, marker placement (beep / first

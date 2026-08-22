@@ -9,11 +9,11 @@ from __future__ import annotations
 
 import numpy as np
 
-from .config import HalaConfig
+from .config import LeximetraConfig
 from .vad import frame_rms_db
 
 
-def segment_to_bursts(speech_segments, sr, cfg: HalaConfig):
+def segment_to_bursts(speech_segments, sr, cfg: LeximetraConfig):
     """Merge speech segments (samples) into bursts (ms) with gaps <= MAX_GAP_FOR_MERGE_MS."""
     merged_bursts = []
 
@@ -59,7 +59,7 @@ def burst_to_samples(burst, sr):
     return start, end
 
 
-def has_immediate_rise(start_sample, end_sample, y, sr, cfg: HalaConfig):
+def has_immediate_rise(start_sample, end_sample, y, sr, cfg: LeximetraConfig):
     rise_end = min(end_sample, start_sample + int(cfg.MAIN_RESPONSE_IMMEDIATE_RISE_MS * sr / 1000))
     frame_starts, dbs = frame_rms_db(
         y, start_sample, rise_end, sr,
@@ -71,7 +71,7 @@ def has_immediate_rise(start_sample, end_sample, y, sr, cfg: HalaConfig):
     return float(np.max(dbs) - dbs[0]) >= cfg.MAIN_RESPONSE_IMMEDIATE_RISE_DB
 
 
-def second_burst_energy_onset_ms(b1, b2, y, sr, cfg: HalaConfig):
+def second_burst_energy_onset_ms(b1, b2, y, sr, cfg: LeximetraConfig):
     second_start, second_end = burst_to_samples(b2, sr)
     search_start_ms = max(
         b1['end_ms'] + cfg.MAIN_RESPONSE_MIN_PAUSE_MS,
@@ -104,7 +104,7 @@ def second_burst_energy_onset_ms(b1, b2, y, sr, cfg: HalaConfig):
     return b2['start_ms']
 
 
-def find_main_response_onset_ms(start_sample, end_sample, y, sr, cfg: HalaConfig, min_delay_ms=None):
+def find_main_response_onset_ms(start_sample, end_sample, y, sr, cfg: LeximetraConfig, min_delay_ms=None):
     if min_delay_ms is None:
         min_delay_ms = cfg.MAIN_RESPONSE_MIN_DELAY_MS
     frame_starts, dbs = frame_rms_db(
@@ -159,7 +159,7 @@ def find_main_response_onset_ms(start_sample, end_sample, y, sr, cfg: HalaConfig
     return frame_starts[onset_idx] / sr * 1000
 
 
-def choose_main_response_ms(merged_bursts, y, sr, first_speech_onset_ms, cfg: HalaConfig):
+def choose_main_response_ms(merged_bursts, y, sr, first_speech_onset_ms, cfg: LeximetraConfig):
     main_response_ms = first_speech_onset_ms
 
     if len(merged_bursts) >= 2:
@@ -199,7 +199,7 @@ def choose_main_response_ms(merged_bursts, y, sr, first_speech_onset_ms, cfg: Ha
     return main_response_ms
 
 
-def process_trial_data(trial_name, speech_segments, sr, cfg: HalaConfig, y=None):
+def process_trial_data(trial_name, speech_segments, sr, cfg: LeximetraConfig, y=None):
     """Compute per-trial RT/hesitation metrics.
 
     Returns (trial_results dict, merged_bursts) — the bursts are reused for the

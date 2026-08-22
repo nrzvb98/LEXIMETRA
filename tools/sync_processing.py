@@ -6,14 +6,15 @@ developed and validated against the notebook. This app vendors a copy at
 checkout.
 
 The copy is *generated*, never hand-edited. Upstream's package is named
-``hala_rt``; here it lives at ``leximetra.processing``, so every self-reference
-is rewritten to that path on the way in. Because that rewrite is deterministic,
-drift can be detected by re-running it and comparing:
+``hala_rt``; here it lives at ``leximetra.processing``, and its ``Hala*`` types
+are rebranded to ``Leximetra*``, both applied on the way in. Because those
+rewrites are deterministic, drift can be detected by re-running them and
+comparing:
 
     python tools/sync_processing.py            # check for drift (exit 1 if any)
     python tools/sync_processing.py --apply    # re-vendor from upstream
 
-Upstream is located via ``--upstream``, then ``$HALA_PROCESSING_DIR``, then a
+Upstream is located via ``--upstream``, then ``$LEXIMETRA_PROCESSING_DIR``, then a
 sibling ``Hala_Processing`` checkout.
 
 Changes to the pipeline belong upstream: edit there, validate with upstream's
@@ -37,24 +38,33 @@ VENDOR_DIR = APP_ROOT / "src" / "leximetra" / "processing"
 UPSTREAM_PACKAGE = "hala_rt"
 VERSION_FILE = "VERSION"
 
-# Upstream's package name is `hala_rt`; here it is `leximetra.processing`. Match
-# the bare token only, so `hala_rt_something` and `_hala_output.csv` are left
-# alone. The transform is idempotent for free now that the two names differ:
-# rewritten text no longer contains the token being matched.
-_RENAME = re.compile(r"\bhala_rt\b")
+# Upstream's sources carry its own branding; the copy here carries ours. Every
+# rule matches a bare token, so `hala_rt_something`, `_hala_output.csv` and the
+# `Hala_Processing` repo name are all left alone. The transform is idempotent
+# for free: rewritten text no longer contains the tokens being matched.
+_RENAMES = (
+    # Upstream's package is `hala_rt`; here it lives at `leximetra.processing`.
+    (re.compile(r"\bhala_rt\b"), "leximetra.processing"),
+    # Its two public types. Rebranded, not redesigned -- renaming them to
+    # something more descriptive would be an editorial change to code this
+    # repo does not own, and would not survive comparison with upstream.
+    (re.compile(r"\bHala(?=(?:Config|Result)\b)"), "Leximetra"),
+)
 
 
 def rewrite(text: str) -> str:
     """Apply the vendoring transform to one module's source."""
-    return _RENAME.sub("leximetra.processing", text)
+    for pattern, replacement in _RENAMES:
+        text = pattern.sub(replacement, text)
+    return text
 
 
 def find_upstream(explicit: str | None) -> Path:
     candidates = []
     if explicit:
         candidates.append(Path(explicit))
-    if os.environ.get("HALA_PROCESSING_DIR"):
-        candidates.append(Path(os.environ["HALA_PROCESSING_DIR"]))
+    if os.environ.get("LEXIMETRA_PROCESSING_DIR"):
+        candidates.append(Path(os.environ["LEXIMETRA_PROCESSING_DIR"]))
     candidates.append(APP_ROOT.parent.parent / "Hala_Processing")
 
     for candidate in candidates:
@@ -64,7 +74,7 @@ def find_upstream(explicit: str | None) -> Path:
     tried = "\n".join(f"  - {c}" for c in candidates)
     raise SystemExit(
         "Could not find the Hala_Processing checkout. Tried:\n"
-        f"{tried}\n\nPass --upstream PATH or set HALA_PROCESSING_DIR."
+        f"{tried}\n\nPass --upstream PATH or set LEXIMETRA_PROCESSING_DIR."
     )
 
 

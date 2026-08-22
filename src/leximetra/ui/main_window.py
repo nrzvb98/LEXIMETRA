@@ -47,7 +47,7 @@ VAD_PROGRESS_START = 20
 VAD_PROGRESS_END = 95
 
 
-class HALAMainWindow(QMainWindow):
+class LeximetraMainWindow(QMainWindow):
     """Main application window"""
 
     def __init__(self):

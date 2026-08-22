@@ -44,7 +44,7 @@ def write_output_csv(path, trial_count):
 class FakeResult:
     def __init__(self, trial_count, beep_anomalies=None):
         self.df_output = list(range(trial_count))
-        # Mirrors HalaResult, which defaults this to an empty list.
+        # Mirrors LeximetraResult, which defaults this to an empty list.
         self.beep_anomalies = beep_anomalies or []
 
 

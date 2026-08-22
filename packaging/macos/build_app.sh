@@ -221,9 +221,9 @@ if [[ "${BUNDLE_PROCESSING}" == "1" ]]; then
     # every one of them otherwise surfaces the first time a user loads a
     # recording.
     echo "Self-testing the packaged app..."
-    if ! PYTHONUNBUFFERED=1 HALA_SELF_TEST=1 "${APP_PATH}/Contents/MacOS/${APP_NAME}" 2>&1 | grep -q "^SELF-TEST OK"; then
+    if ! PYTHONUNBUFFERED=1 LEXIMETRA_SELF_TEST=1 "${APP_PATH}/Contents/MacOS/${APP_NAME}" 2>&1 | grep -q "^SELF-TEST OK"; then
         echo "The packaged app cannot run an analysis. Output:" >&2
-        PYTHONUNBUFFERED=1 HALA_SELF_TEST=1 "${APP_PATH}/Contents/MacOS/${APP_NAME}" 2>&1 | tail -20 >&2
+        PYTHONUNBUFFERED=1 LEXIMETRA_SELF_TEST=1 "${APP_PATH}/Contents/MacOS/${APP_NAME}" 2>&1 | tail -20 >&2
         exit 1
     fi
     echo "  OK"

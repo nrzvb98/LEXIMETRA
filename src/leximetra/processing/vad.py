@@ -16,7 +16,7 @@ import numpy as np
 import torch
 
 from .audio_io import load_audio_app_style
-from .config import HalaConfig
+from .config import LeximetraConfig
 
 logger = logging.getLogger("leximetra.processing")
 
@@ -101,7 +101,7 @@ def frame_rms_db(y, start, end, sr, frame_ms=20, hop_ms=5):
     return frame_starts, np.asarray(dbs)
 
 
-def recover_pre_vad_onset(original_start, end, y, sr, cfg: HalaConfig):
+def recover_pre_vad_onset(original_start, end, y, sr, cfg: LeximetraConfig):
     if original_start < int(cfg.PRE_VAD_MIN_ORIGINAL_START_MS * sr / 1000):
         return original_start
 
@@ -131,7 +131,7 @@ def recover_pre_vad_onset(original_start, end, y, sr, cfg: HalaConfig):
     return original_start
 
 
-def refine_speech_boundaries(speech_timestamps, y, sr, cfg: HalaConfig):
+def refine_speech_boundaries(speech_timestamps, y, sr, cfg: LeximetraConfig):
     refined = []
     min_samples = int(cfg.MIN_SPEECH_DUR_MS * sr / 1000)
 
@@ -167,7 +167,7 @@ def refine_speech_boundaries(speech_timestamps, y, sr, cfg: HalaConfig):
     return refined
 
 
-def split_long_speech_on_internal_pauses(speech_timestamps, y, sr, cfg: HalaConfig):
+def split_long_speech_on_internal_pauses(speech_timestamps, y, sr, cfg: LeximetraConfig):
     split_timestamps = []
     min_segment_samples = int(cfg.INTERNAL_SPLIT_MIN_SEGMENT_MS * sr / 1000)
     min_pause_samples = int(cfg.INTERNAL_SPLIT_MIN_PAUSE_MS * sr / 1000)
@@ -228,7 +228,7 @@ def split_long_speech_on_internal_pauses(speech_timestamps, y, sr, cfg: HalaConf
     return split_timestamps
 
 
-def get_trial_speech_timestamps(wav_tensor, y, sr, cfg: HalaConfig, model=None):
+def get_trial_speech_timestamps(wav_tensor, y, sr, cfg: LeximetraConfig, model=None):
     """Raw Silero VAD -> boundary refinement -> internal-pause splitting."""
     if model is None:
         model = get_model()

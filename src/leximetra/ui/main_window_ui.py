@@ -1,4 +1,4 @@
-"""Widget-tree construction for :class:`HALAMainWindow`.
+"""Widget-tree construction for :class:`LeximetraMainWindow`.
 
 ``build_ui(window)`` assembles the layout and assigns the widgets the
 controller drives (``window.play_btn``, ``window.trial_table``, ...) onto the

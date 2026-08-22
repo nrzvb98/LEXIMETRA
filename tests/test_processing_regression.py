@@ -27,11 +27,15 @@ SAMPLE_AUDIO = PROJECT_ROOT / "examples" / "audio" / "trial_sample.m4a"
 BASELINE_DIR = PROJECT_ROOT / "tests" / "data" / "processing_baseline"
 STEM = SAMPLE_AUDIO.stem
 
-CSV_NAMES = [
-    f"{STEM}_HALA_Full_Analysis_Results.csv",
-    f"{STEM}_HALA_Analysis_Results.csv",
-    f"{STEM}_hala_output.csv",
-]
+# The pipeline is upstream's, so it still writes upstream's names; the frozen
+# copies here carry this app's. Mapping rather than renaming the produced side
+# keeps the gate asserting what it always did -- that the bytes match -- while
+# recording, in one place, exactly which name the pipeline emits.
+CSV_NAMES = {
+    f"{STEM}_HALA_Full_Analysis_Results.csv": f"{STEM}_Full_Analysis_Results.csv",
+    f"{STEM}_HALA_Analysis_Results.csv": f"{STEM}_Analysis_Results.csv",
+    f"{STEM}_hala_output.csv": f"{STEM}_output.csv",
+}
 
 pytestmark = pytest.mark.slow
 
@@ -51,10 +55,10 @@ def pipeline_output(tmp_path_factory):
     return output_dir
 
 
-@pytest.mark.parametrize("csv_name", CSV_NAMES)
-def test_csv_matches_frozen_baseline(pipeline_output, csv_name):
+@pytest.mark.parametrize("csv_name,baseline_name", sorted(CSV_NAMES.items()))
+def test_csv_matches_frozen_baseline(pipeline_output, csv_name, baseline_name):
     produced = pipeline_output / csv_name
-    baseline = BASELINE_DIR / csv_name
+    baseline = BASELINE_DIR / baseline_name
 
     assert produced.is_file(), f"pipeline did not write {csv_name}"
     assert baseline.is_file(), f"missing baseline {baseline}"
@@ -137,12 +141,12 @@ def test_loading_audio_analyzes_it_end_to_end(qapp, tmp_path, monkeypatch):
     event loop, and pipeline, which is the only place their interaction is
     actually exercised.
     """
-    from leximetra.ui.main_window import HALAMainWindow
+    from leximetra.ui.main_window import LeximetraMainWindow
 
     audio = tmp_path / "session.m4a"
     audio.write_bytes(SAMPLE_AUDIO.read_bytes())
 
-    window = HALAMainWindow()
+    window = LeximetraMainWindow()
     try:
         assert window._load_audio_file(audio) is True
 
@@ -166,7 +170,7 @@ def test_output_csv_loads_through_the_app(pipeline_output):
     controller's rule that trials tile the recording without gaps.
     """
     from leximetra.data.csv_io import load_output_csv
-    from leximetra.ui.main_window import HALAMainWindow
+    from leximetra.ui.main_window import LeximetraMainWindow
 
     trials = load_output_csv(pipeline_output / f"{STEM}_hala_output.csv")
 
@@ -174,7 +178,7 @@ def test_output_csv_loads_through_the_app(pipeline_output):
     for trial in trials:
         trial.validate()
 
-    adjustments = HALAMainWindow._noncontiguous_trial_starts(trials)
+    adjustments = LeximetraMainWindow._noncontiguous_trial_starts(trials)
     assert not adjustments, (
         "pipeline output is not contiguous; the app would rewrite these starts: "
         f"{adjustments}"

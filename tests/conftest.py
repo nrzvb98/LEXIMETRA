@@ -13,7 +13,7 @@ import pytest  # noqa: E402
 from PyQt6.QtWidgets import QApplication, QMessageBox  # noqa: E402
 
 from leximetra.data.output_paths import default_output_path  # noqa: E402
-from leximetra.ui.main_window import HALAMainWindow  # noqa: E402
+from leximetra.ui.main_window import LeximetraMainWindow  # noqa: E402
 
 
 SAMPLE_RATE = 16000
@@ -53,7 +53,7 @@ def window(qapp, dialogs, tmp_path):
     Bypasses the file dialog and the decoders: those are covered elsewhere, and
     the controller only needs a sample buffer, a rate, and a duration.
     """
-    window = HALAMainWindow()
+    window = LeximetraMainWindow()
     samples = np.zeros(int(DURATION_SECONDS * SAMPLE_RATE), dtype=np.float32)
 
     audio = window.audio_manager

@@ -15,7 +15,7 @@ from PyQt6.QtWidgets import QMessageBox
 from leximetra.audio.manager import AudioManager
 from leximetra.data.processing_service import ProcessingOutcome, ProcessingStatus
 from leximetra.data.trial_data import CSV_COLUMNS
-from leximetra.ui.main_window import HALAMainWindow
+from leximetra.ui.main_window import LeximetraMainWindow
 
 
 SAMPLE_RATE = 16000
@@ -69,7 +69,7 @@ def fake_decoder(monkeypatch):
 @pytest.fixture
 def loaded_window(qapp, dialogs, fake_decoder):
     """A window on which ``_load_audio_file`` can be driven for real."""
-    window = HALAMainWindow()
+    window = LeximetraMainWindow()
     window.trial_waveform.resize(800, 300)
     yield window
     window.close()
@@ -87,7 +87,7 @@ def processing(monkeypatch):
                 write_csv(self.output_csv_path, writes)
             return outcome
 
-        monkeypatch.setattr(HALAMainWindow, "_run_auto_processing", run)
+        monkeypatch.setattr(LeximetraMainWindow, "_run_auto_processing", run)
         monkeypatch.setattr(
             "leximetra.ui.main_window.processing_available", lambda: True
         )
@@ -176,7 +176,7 @@ def test_analysis_is_skipped_when_unavailable(
     monkeypatch.setattr("leximetra.ui.main_window.processing_available", lambda: False)
     called = []
     monkeypatch.setattr(
-        HALAMainWindow,
+        LeximetraMainWindow,
         "_run_auto_processing",
         lambda self, path: called.append(path),
     )
@@ -250,7 +250,7 @@ def test_an_unreadable_csv_outranks_the_analysis_status(
         return success(3)
 
     monkeypatch.setattr("leximetra.ui.main_window.processing_available", lambda: True)
-    monkeypatch.setattr(HALAMainWindow, "_run_auto_processing", run)
+    monkeypatch.setattr(LeximetraMainWindow, "_run_auto_processing", run)
 
     loaded_window._load_audio_file(audio_file)
 
@@ -272,13 +272,13 @@ def test_an_unreadable_csv_outranks_the_analysis_status(
     ],
 )
 def test_progress_mapping(stage, done, total, expected_value, expected_text):
-    value, text = HALAMainWindow._processing_progress(stage, done, total)
+    value, text = LeximetraMainWindow._processing_progress(stage, done, total)
 
     assert (value, text) == (expected_value, expected_text)
 
 
 def test_progress_mapping_survives_a_zero_total():
-    value, text = HALAMainWindow._processing_progress("vad", 0, 0)
+    value, text = LeximetraMainWindow._processing_progress("vad", 0, 0)
 
     assert value == 20
     assert "0 of 0" in text

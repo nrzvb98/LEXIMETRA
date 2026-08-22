@@ -35,7 +35,7 @@ import scipy.signal
 import soundfile as sf
 
 from .audio_io import load_audio_app_style
-from .config import HalaConfig
+from .config import LeximetraConfig
 
 logger = logging.getLogger("leximetra.processing")
 
@@ -58,7 +58,7 @@ def analyze_beep_template(path, target_sr=16000):
     return tpl, peak_freq, duration_s
 
 
-def detect_beeps_template_matched(y, sr, cfg: HalaConfig):
+def detect_beeps_template_matched(y, sr, cfg: LeximetraConfig):
     """Return [(start_sample, end_sample), ...] of accepted beeps."""
     # Wide (Noise Reference) — shared across templates
     sos_wide = scipy.signal.butter(2, [200, 4000], 'bandpass', fs=sr, output='sos')
@@ -159,7 +159,7 @@ def detect_beeps_template_matched(y, sr, cfg: HalaConfig):
     return valid_beeps
 
 
-def slice_trials(y, sr, valid_beeps, slice_dir, cfg: HalaConfig):
+def slice_trials(y, sr, valid_beeps, slice_dir, cfg: LeximetraConfig):
     """Write one WAV per trial (beep END -> next beep start, or +SLICE_TAIL_S).
 
     Slices are written as 16-bit PCM (soundfile's WAV default) and downstream
@@ -184,7 +184,7 @@ def slice_trials(y, sr, valid_beeps, slice_dir, cfg: HalaConfig):
     return slice_files
 
 
-def _match_profile(y, sr, cfg: HalaConfig, tpl_path):
+def _match_profile(y, sr, cfg: LeximetraConfig, tpl_path):
     """Normalised template match at EVERY sample offset, computed exactly.
 
     match(s) = |<z_s, tpl>| / (||z_s|| * ||tpl||) for the analytic, band-limited
@@ -245,7 +245,7 @@ def _match_profile(y, sr, cfg: HalaConfig, tpl_path):
     return profile, n, exact_at
 
 
-def rescue_short_beeps(y, sr, valid_beeps, cfg: HalaConfig):
+def rescue_short_beeps(y, sr, valid_beeps, cfg: LeximetraConfig):
     """Recover beeps the trigger floor hid from the detector.
 
     Additive only: the detector's own beeps are never touched, re-measured or
@@ -253,7 +253,7 @@ def rescue_short_beeps(y, sr, valid_beeps, cfg: HalaConfig):
     whose beeps the detector already found gets nothing added and its output is
     unchanged bit for bit. Returns (rescued_beeps, anomalies).
 
-    See HalaConfig.BEEP_RESCUE_* for why this is a second pass rather than a
+    See LeximetraConfig.BEEP_RESCUE_* for why this is a second pass rather than a
     better-behaved threshold in the detector itself.
     """
     if not cfg.BEEP_RESCUE_ENABLED or not valid_beeps:
@@ -345,7 +345,7 @@ def rescue_short_beeps(y, sr, valid_beeps, cfg: HalaConfig):
             )
     return [(s, e) for s, e, _ in kept], anomalies
 
-def tone_match_scores(y, sr, cfg: HalaConfig, start_samples) -> list[float]:
+def tone_match_scores(y, sr, cfg: LeximetraConfig, start_samples) -> list[float]:
     """Best phase-coherent template match at each start sample (audit only).
 
     Same measure the template detector gates on, recomputed for events it did
@@ -379,7 +379,7 @@ def tone_match_scores(y, sr, cfg: HalaConfig, start_samples) -> list[float]:
     return best
 
 
-def pair_beeps_to_slices(valid_beeps, df_legacy: pd.DataFrame, sr, cfg: HalaConfig):
+def pair_beeps_to_slices(valid_beeps, df_legacy: pd.DataFrame, sr, cfg: LeximetraConfig):
     """Match legacy beep timings to trial slices by START time, not by index.
 
     The template detector defines the trial set — one slice per accepted beep,
@@ -498,7 +498,7 @@ def pair_beeps_to_slices(valid_beeps, df_legacy: pd.DataFrame, sr, cfg: HalaConf
     return pd.DataFrame(rows), anomalies
 
 
-def detect_beeps_legacy(y, sr, cfg: HalaConfig) -> pd.DataFrame:
+def detect_beeps_legacy(y, sr, cfg: LeximetraConfig) -> pd.DataFrame:
     """Fixed-band beep timings for the final CSV (notebook's final-CSV cell, verbatim)."""
     sos_beep = scipy.signal.butter(
         2, [cfg.LEGACY_BEEP_BAND_LO_HZ, cfg.LEGACY_BEEP_BAND_HI_HZ], 'bandpass', fs=sr, output='sos'
