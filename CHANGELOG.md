@@ -12,7 +12,7 @@ Versions follow `pyproject.toml`.
 
 ## Unreleased
 
-Vendored pipeline: 1.2.0 (upstream `8970af9`).
+Pipeline: 1.2.0.
 
 ### Added
 
@@ -23,6 +23,12 @@ Vendored pipeline: 1.2.0 (upstream `8970af9`).
   recovered so the extra trials don't appear unexplained.
 
 ### Changed
+
+- The processing pipeline is maintained in this repository. It was a
+  generated copy of a separate project that had to be edited there and
+  re-vendored here; that project was never published, so the workflow was
+  impossible to follow from a clone. Edit `src/leximetra/processing/`
+  directly and run `tests/test_processing_regression.py`.
 
 - Every artifact the app writes is renamed. For a recording `p001.m4a` it now
   writes `p001_output.csv` and a `p001_output/` folder holding `Slices/`,
