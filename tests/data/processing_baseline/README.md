@@ -45,8 +45,8 @@ catch future drift, which is the weaker gate.
 
 This is the *vendoring* gate, not the full fidelity gate. `Hala_Processing`
 keeps `regression_check.py`, which additionally byte-compares two longer
-sessions against frozen notebook outputs — some 2.1 GB
-of references plus 43 MB of source recordings that cannot live in this repo.
+sessions against frozen notebook outputs — some 2.1 GB of references plus the
+source recordings, none of which can live in this repo.
 Changes to the pipeline itself should still be validated upstream.
 
 ## Re-baselining
