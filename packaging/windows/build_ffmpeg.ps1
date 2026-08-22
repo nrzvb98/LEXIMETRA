@@ -78,7 +78,7 @@ function Write-LicenseFiles {
             "",
             "No FFmpeg source license files were found next to the supplied binary directory.",
             "Before distributing this package, include the applicable FFmpeg license notices",
-            "for the exact FFmpeg build placed in HALA_FFMPEG_DIR."
+            "for the exact FFmpeg build placed in LEXIMETRA_FFMPEG_DIR."
         ) | Out-File -Encoding utf8 -FilePath (Join-Path $LicenseDir "SUPPLIED_BINARY_NOTICE.md")
     }
 
@@ -106,7 +106,7 @@ function Resolve-SuppliedFfmpegBinDir {
         return $NestedBin
     }
 
-    throw "HALA_FFMPEG_DIR must contain ffmpeg.exe and ffprobe.exe, directly or under a bin directory."
+    throw "LEXIMETRA_FFMPEG_DIR must contain ffmpeg.exe and ffprobe.exe, directly or under a bin directory."
 }
 
 function Import-SuppliedFfmpeg {
@@ -114,7 +114,7 @@ function Import-SuppliedFfmpeg {
 
     $SuppliedBinDir = Resolve-SuppliedFfmpegBinDir -Directory $Directory
     if (-not (Test-Path -LiteralPath (Join-Path $SuppliedBinDir "ffprobe.exe"))) {
-        throw "HALA_FFMPEG_DIR is missing ffprobe.exe."
+        throw "LEXIMETRA_FFMPEG_DIR is missing ffprobe.exe."
     }
 
     $InstallBinDir = Join-Path $Prefix "bin"
@@ -127,7 +127,7 @@ function Import-SuppliedFfmpeg {
     Assert-FfmpegBinary -Binary (Join-Path $InstallBinDir "ffmpeg.exe")
     Assert-FfmpegBinary -Binary (Join-Path $InstallBinDir "ffprobe.exe")
 
-    $licenseSource = if ($env:HALA_FFMPEG_LICENSE_DIR) { $env:HALA_FFMPEG_LICENSE_DIR } else { Split-Path -Parent $SuppliedBinDir }
+    $licenseSource = if ($env:LEXIMETRA_FFMPEG_LICENSE_DIR) { $env:LEXIMETRA_FFMPEG_LICENSE_DIR } else { Split-Path -Parent $SuppliedBinDir }
     Write-LicenseFiles -FromSourceDir $licenseSource
     Write-Host "Using supplied FFmpeg build: $Prefix"
 }
@@ -147,7 +147,7 @@ function Get-MsysBash {
         }
     }
 
-    throw "MSYS2 bash was not found. Install MSYS2 or set HALA_FFMPEG_DIR to a prepared LGPL FFmpeg directory."
+    throw "MSYS2 bash was not found. Install MSYS2 or set LEXIMETRA_FFMPEG_DIR to a prepared LGPL FFmpeg directory."
 }
 
 function Convert-ToMsysPath {
@@ -175,7 +175,7 @@ function Quote-Msys {
     return "'$Value'"
 }
 
-if ($env:HALA_REBUILD_FFMPEG -eq "1") {
+if ($env:LEXIMETRA_REBUILD_FFMPEG -eq "1") {
     Remove-Item -Recurse -Force -LiteralPath $BuildRoot -ErrorAction SilentlyContinue
 }
 
@@ -193,8 +193,8 @@ if ((Test-Path -LiteralPath $ExistingFfmpeg) -and (Test-Path -LiteralPath $Exist
     exit 0
 }
 
-if ($env:HALA_FFMPEG_DIR) {
-    Import-SuppliedFfmpeg -Directory $env:HALA_FFMPEG_DIR
+if ($env:LEXIMETRA_FFMPEG_DIR) {
+    Import-SuppliedFfmpeg -Directory $env:LEXIMETRA_FFMPEG_DIR
     exit 0
 }
 

@@ -22,7 +22,7 @@ logger = logging.getLogger("leximetra.processing")
 
 _MODEL_CACHE = None
 
-SILERO_DIR_ENV = "HALA_SILERO_DIR"
+SILERO_DIR_ENV = "LEXIMETRA_SILERO_DIR"
 # A silero-vad checkout shipped inside the package, if one was placed there.
 # Absent in this repo (torch.hub's cache serves development); a host app that
 # must run offline can vendor one here instead of fetching from GitHub.
@@ -32,7 +32,7 @@ _BUNDLED_SILERO_DIR = Path(__file__).resolve().parent / "silero"
 def _local_silero_dir():
     """Return a local silero-vad checkout to load, or None to fetch it.
 
-    Checked in order: the ``HALA_SILERO_DIR`` override, then a copy bundled
+    Checked in order: the ``LEXIMETRA_SILERO_DIR`` override, then a copy bundled
     inside the package. A bad override is an error rather than a silent
     fallback -- a packaged app that quietly reaches for GitHub instead of the
     copy it shipped would fail later, offline, in front of a user.

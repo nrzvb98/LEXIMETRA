@@ -22,7 +22,7 @@ def _existing_binary_dirs(binary_dirs):
 
 def _bundled_binary_dirs():
     candidates = []
-    env_dir = os.environ.get("HALA_FFMPEG_BIN_DIR")
+    env_dir = os.environ.get("LEXIMETRA_FFMPEG_BIN_DIR")
     if env_dir:
         candidates.append(Path(env_dir))
 

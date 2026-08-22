@@ -115,9 +115,9 @@ Python dependencies, the LEXIMETRA icon, and `ffmpeg.exe` / `ffprobe.exe` under
 
 By default, `packaging\windows\build_ffmpeg.ps1` builds FFmpeg from the official
 source release using MSYS2. Install MSYS2 with the MINGW64 toolchain first, or
-set `HALA_FFMPEG_DIR` to a prepared LGPL-compatible FFmpeg directory containing
-`ffmpeg.exe` and `ffprobe.exe`. For debugging only, set `HALA_BUNDLE_FFMPEG=0`
-to build the app without bundled FFmpeg.
+set `LEXIMETRA_FFMPEG_DIR` to a prepared LGPL-compatible FFmpeg directory
+containing `ffmpeg.exe` and `ffprobe.exe`. For debugging only, set
+`LEXIMETRA_BUNDLE_FFMPEG=0` to build the app without bundled FFmpeg.
 
 In an MSYS2 MINGW64 shell, the expected build tools are:
 

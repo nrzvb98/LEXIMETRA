@@ -5,7 +5,7 @@ APP_NAME="LEXIMETRA"
 BUNDLE_IDENTIFIER="com.nrzvb98.leximetra"
 TARGET_ARCH="${TARGET_ARCH:-arm64}"
 FFMPEG_VERSION="${FFMPEG_VERSION:-8.0.1}"
-HALA_BUNDLE_FFMPEG="${HALA_BUNDLE_FFMPEG:-1}"
+LEXIMETRA_BUNDLE_FFMPEG="${LEXIMETRA_BUNDLE_FFMPEG:-1}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
@@ -145,7 +145,7 @@ INFO_PLIST="${APP_PATH}/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${VERSION}" "${INFO_PLIST}" 2>/dev/null \
     || /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string ${VERSION}" "${INFO_PLIST}"
 
-if [[ "${HALA_BUNDLE_FFMPEG}" != "0" ]]; then
+if [[ "${LEXIMETRA_BUNDLE_FFMPEG}" != "0" ]]; then
     echo "Building or reusing bundled FFmpeg ${FFMPEG_VERSION}..."
     FFMPEG_VERSION="${FFMPEG_VERSION}" \
         TARGET_ARCH="${TARGET_ARCH}" \
@@ -175,7 +175,7 @@ if [[ "${HALA_BUNDLE_FFMPEG}" != "0" ]]; then
     codesign --force --sign - "${BUNDLED_BIN_DIR}/ffmpeg"
     codesign --force --sign - "${BUNDLED_BIN_DIR}/ffprobe"
 else
-    echo "Skipping bundled FFmpeg because HALA_BUNDLE_FFMPEG=0."
+    echo "Skipping bundled FFmpeg because LEXIMETRA_BUNDLE_FFMPEG=0."
 fi
 
 if [[ "${BUNDLE_PROCESSING}" == "1" ]]; then

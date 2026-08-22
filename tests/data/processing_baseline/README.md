@@ -10,12 +10,16 @@ pipeline.
 baseline generated from the vendored copy would only catch future drift, not a
 mistake made during the copy itself.
 
-| File | Contents |
-|---|---|
-| `trial_sample_HALA_Full_Analysis_Results.csv` | Absolute beep/speech/hesitation timings per trial |
-| `trial_sample_HALA_Analysis_Results.csv` | RT + response-type summary subset |
-| `trial_sample_hala_output.csv` | Software-format export the app loads |
-| `slices.sha256` | SHA-256 of each `HALA_Slices/Trial_NNN.wav` |
+These carry this app's names; the pipeline is upstream's and still writes its
+own. `test_csv_matches_frozen_baseline` holds the mapping between the two, so
+the produced-side name is in the middle column here.
+
+| File | Compared against | Contents |
+|---|---|---|
+| `trial_sample_Full_Analysis_Results.csv` | `trial_sample_HALA_Full_Analysis_Results.csv` | Absolute beep/speech/hesitation timings per trial |
+| `trial_sample_Analysis_Results.csv` | `trial_sample_HALA_Analysis_Results.csv` | RT + response-type summary subset |
+| `trial_sample_output.csv` | `trial_sample_hala_output.csv` | Software-format export the app loads |
+| `slices.sha256` | `HALA_Slices/Trial_NNN.wav` | SHA-256 of each trial slice |
 
 Slices are hashed rather than committed: they are 12 WAVs of generated audio,
 and a hash catches drift just as well as the bytes would.

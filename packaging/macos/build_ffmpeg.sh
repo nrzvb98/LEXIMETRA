@@ -24,7 +24,7 @@ if [[ "${TARGET_ARCH}" != "arm64" && "${TARGET_ARCH}" != "x86_64" ]]; then
     exit 1
 fi
 
-if [[ "${HALA_REBUILD_FFMPEG:-0}" == "1" ]]; then
+if [[ "${LEXIMETRA_REBUILD_FFMPEG:-0}" == "1" ]]; then
     rm -rf "${BUILD_ROOT}"
 fi
 
@@ -138,7 +138,7 @@ if grep -Eq -- "--enable-(gpl|nonfree)" config.h ffbuild/config.log 2>/dev/null;
 fi
 
 echo "Building FFmpeg ${FFMPEG_VERSION}..."
-BUILD_JOBS="${HALA_BUILD_JOBS:-}"
+BUILD_JOBS="${LEXIMETRA_BUILD_JOBS:-}"
 if [[ -z "${BUILD_JOBS}" ]]; then
     BUILD_JOBS="$(getconf _NPROCESSORS_ONLN 2>/dev/null || true)"
 fi

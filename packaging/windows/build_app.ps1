@@ -86,7 +86,7 @@ try {
         throw "Expected app directory was not created: $AppDir"
     }
 
-    if ($env:HALA_BUNDLE_FFMPEG -ne "0") {
+    if ($env:LEXIMETRA_BUNDLE_FFMPEG -ne "0") {
         Write-Host "Building or reusing bundled FFmpeg $FFmpegVersion..."
         & (Join-Path $ScriptDir "build_ffmpeg.ps1") `
             -TargetArch $TargetArch `
@@ -118,7 +118,7 @@ try {
         Remove-Item -Recurse -Force -LiteralPath $LicenseDest -ErrorAction SilentlyContinue
         Copy-Item -Recurse -Force -LiteralPath $LicenseSource -Destination $LicenseDest
     } else {
-        Write-Host "Skipping bundled FFmpeg because HALA_BUNDLE_FFMPEG=0."
+        Write-Host "Skipping bundled FFmpeg because LEXIMETRA_BUNDLE_FFMPEG=0."
     }
 
     Write-Host "Creating distributable archive..."

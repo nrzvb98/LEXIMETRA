@@ -49,6 +49,11 @@ _RENAMES = (
     # something more descriptive would be an editorial change to code this
     # repo does not own, and would not survive comparison with upstream.
     (re.compile(r"\bHala(?=(?:Config|Result)\b)"), "Leximetra"),
+    # The one environment variable the pipeline reads. Named exactly rather
+    # than by a `HALA_` prefix rule, which would also catch HALA_Slices and the
+    # HALA_*_Results filenames -- those are output names the pipeline writes and
+    # the service renames on disk, so they have to survive the transform.
+    (re.compile(r"\bHALA_SILERO_DIR\b"), "LEXIMETRA_SILERO_DIR"),
 )
 
 
