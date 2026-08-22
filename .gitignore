@@ -15,7 +15,11 @@ dist/
 
 # Runtime data and user outputs. Both names: recordings analyzed before the
 # rename keep `_hala_output`, and the pipeline's own result CSVs land in the
-# `<stem>_output/` sidecar alongside the beep anomaly report.
+# `<stem>_output/` sidecar alongside the beep anomaly report. The sidecar is
+# ignored as a directory as well as by the extensions inside it, so anything the
+# pipeline grows later is covered without editing this file again.
+*_output/
+*_hala_output/
 *_output*.csv
 *_hala_output*.csv
 *_Analysis_Results.csv

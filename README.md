@@ -140,6 +140,26 @@ asks for, on Apple's Big Sur grid) and `packaging/windows/icons/leximetra-icon.i
 transparency; source PNGs painted on an opaque background show black corners in
 the Dock if used directly.
 
+## Input
+
+One recording per session — every trial in a single file, back to back.
+
+| | |
+| --- | --- |
+| **Formats** | `.wav` and `.flac` read directly; `.mp3`, `.m4a` and `.m4v` decoded through FFmpeg |
+| **Sample rate** | Any — resampled to 16 kHz internally for analysis |
+| **Channels** | Mono or stereo; stereo is averaged down to mono for analysis |
+
+Automatic analysis additionally expects an **onset cue beep before each trial**:
+a roughly 1 kHz tone — the detector's fixed band is 900–1100 Hz — lasting at
+least 90 ms, matched against the two templates shipped in
+`src/leximetra/processing/templates/`. Quiet beeps that fall under the duration
+gate are recovered where possible and listed in the pairing report.
+
+A recording with no beeps, or an unusual cue the detector does not match, still
+loads perfectly well — analysis reports what it could not find and you cut the
+trials by hand.
+
 ## Usage
 
 ```bash
@@ -156,15 +176,29 @@ To cut trials by hand instead — when a recording has no beeps, or analysis is 
 installed — place the trial-end cursor on the **Global Timeline** and click
 **Add Trial End**, repeating to divide the session.
 
-### Files written for `/sessions/p001.m4a`
+### Files written
 
-| Path | Contents |
-| --- | --- |
-| `/sessions/p001_output.csv` | The output CSV the app loads and saves |
-| `/sessions/p001_output/Slices/Trial_NNN.wav` | Per-trial audio from the analysis |
-| `/sessions/p001_output/p001_Full_Analysis_Results.csv` | Absolute beep/speech/hesitation timings |
-| `/sessions/p001_output/p001_Analysis_Results.csv` | RT and response-type summary |
-| `/sessions/p001_output/p001_beep_pairing_report.csv` | Written only when a beep did not pair 1:1 — quiet-beep recoveries land here |
+Everything is written next to the recording, named after it. Nothing is placed in
+a central location, so a session folder stays self-contained and movable. For an
+input of `/sessions/p001.m4a`:
+
+```
+/sessions/
+  p001.m4a                            input — only ever read, never modified
+  p001_output.csv                     the per-trial CSV: what the app loads, edits and saves
+  p001_output_backup.csv              the previous CSV, kept when you re-analyze
+  p001_output/                        analysis sidecar, one per recording
+    Slices/
+      Trial_001.wav ... Trial_NNN.wav per-trial audio cut at the beep boundaries
+    p001_Full_Analysis_Results.csv    absolute beep/speech/hesitation timings
+    p001_Analysis_Results.csv         RT and response-type summary
+    p001_beep_pairing_report.csv      only when a beep did not pair 1:1 —
+                                      quiet-beep recoveries are listed here
+```
+
+`p001_output.csv` is the only one of these the app reads back. The sidecar is
+analysis evidence: keep it to audit a session, delete it to reclaim space, and
+the CSV still loads.
 
 Re-analyzing renames the existing output CSV to `p001_output_backup.csv`
 before writing a new one, so hand-verified work is never overwritten silently.
@@ -181,7 +215,7 @@ keeps using the legacy name for that recording so its files stay together.
 | `←` / `→` | Nudge the trial cursor |
 | `Shift` + `←` / `→` | Nudge the trial cursor ×10 |
 
-## Output
+## Output CSV
 
 One CSV row per trial. Timestamps are in seconds (4 decimals); reaction times are in
 milliseconds (0.1 ms precision). See [output_schema.md](docs/output_schema.md) for the full
@@ -196,7 +230,7 @@ column reference.
 | `rt_first_speech_ms` | Beep → first sound, including fillers (ms). |
 | `rt_main_response_ms` | Beep → main word, skipping fillers (ms). |
 | `prefiller_present` | Whether an `Umm… Word` pattern was detected. |
-| `flag_anticipatory` | Response was physiologically too fast. |
+| `flag_anticipatory` | Response came in under 150 ms — physiologically too fast to be a real response. |
 | `flag_timeout` | No response detected in the trial window. |
 | `segments_count` | Number of distinct speech bursts in the trial. |
 
