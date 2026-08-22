@@ -1,7 +1,7 @@
 import os
 import sys
 
-from hala_rt.audio.manager import (
+from leximetra.audio.manager import (
     _bundled_binary_dirs,
     _find_executable,
     _prepend_existing_binary_dirs_to_path,

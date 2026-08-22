@@ -10,8 +10,8 @@ comparing images: the call *is* the cost being guarded.
 import numpy as np
 import pytest
 
-from hala_rt.data.trial_data import TrialData
-from hala_rt.widgets.simple_waveform import SimpleWaveformWidget
+from leximetra.data.trial_data import TrialData
+from leximetra.widgets.simple_waveform import SimpleWaveformWidget
 
 
 WIDTH, HEIGHT = 600, 125

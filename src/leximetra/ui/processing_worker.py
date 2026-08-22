@@ -11,7 +11,7 @@ responding" indicator, so it runs here instead.
 
 from PyQt6.QtCore import QThread, pyqtSignal
 
-from hala_rt.data.processing_service import (
+from leximetra.data.processing_service import (
     ProcessingOutcome,
     ProcessingStatus,
     run_processing,
@@ -23,7 +23,7 @@ class ProcessingWorker(QThread):
 
     ``progress`` carries the pipeline's own stages (``load``, ``slices``,
     ``vad``, ``export``); ``completed`` carries a
-    :class:`~hala_rt.data.processing_service.ProcessingOutcome`, including for
+    :class:`~leximetra.data.processing_service.ProcessingOutcome`, including for
     failures — the service does not raise, so there is no error signal.
     """
 

@@ -12,8 +12,8 @@ import numpy as np  # noqa: E402
 import pytest  # noqa: E402
 from PyQt6.QtWidgets import QApplication, QMessageBox  # noqa: E402
 
-from hala_rt.data.output_paths import default_output_path  # noqa: E402
-from hala_rt.ui.main_window import HALAMainWindow  # noqa: E402
+from leximetra.data.output_paths import default_output_path  # noqa: E402
+from leximetra.ui.main_window import HALAMainWindow  # noqa: E402
 
 
 SAMPLE_RATE = 16000

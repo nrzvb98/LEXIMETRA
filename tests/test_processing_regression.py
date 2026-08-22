@@ -1,6 +1,6 @@
 """Proof that the vendored pipeline still reproduces the validated one.
 
-``src/hala_rt/processing`` is a generated copy of the ``Hala_Processing``
+``src/leximetra/processing`` is a generated copy of the ``Hala_Processing``
 package (see ``tools/sync_processing.py``). These tests run it on the committed
 sample recording and compare against baselines frozen from upstream *before*
 the copy was made — so a mistake in vendoring, a dependency that resolves
@@ -36,7 +36,7 @@ CSV_NAMES = [
 pytestmark = pytest.mark.slow
 
 process_audio = pytest.importorskip(
-    "hala_rt.processing", reason="the 'processing' extra is not installed"
+    "leximetra.processing", reason="the 'processing' extra is not installed"
 ).process_audio
 
 
@@ -106,7 +106,7 @@ def test_service_places_real_pipeline_output(tmp_path):
     the same contract with nothing stubbed, so a mismatch between the fake's
     call signature and the real one cannot hide.
     """
-    from hala_rt.data.processing_service import ProcessingStatus, run_processing
+    from leximetra.data.processing_service import ProcessingStatus, run_processing
 
     audio = tmp_path / "session.m4a"
     audio.write_bytes(SAMPLE_AUDIO.read_bytes())
@@ -137,7 +137,7 @@ def test_loading_audio_analyzes_it_end_to_end(qapp, tmp_path, monkeypatch):
     event loop, and pipeline, which is the only place their interaction is
     actually exercised.
     """
-    from hala_rt.ui.main_window import HALAMainWindow
+    from leximetra.ui.main_window import HALAMainWindow
 
     audio = tmp_path / "session.m4a"
     audio.write_bytes(SAMPLE_AUDIO.read_bytes())
@@ -165,8 +165,8 @@ def test_output_csv_loads_through_the_app(pipeline_output):
     This is the actual integration contract: schema, formatting, and the
     controller's rule that trials tile the recording without gaps.
     """
-    from hala_rt.data.csv_io import load_output_csv
-    from hala_rt.ui.main_window import HALAMainWindow
+    from leximetra.data.csv_io import load_output_csv
+    from leximetra.ui.main_window import HALAMainWindow
 
     trials = load_output_csv(pipeline_output / f"{STEM}_hala_output.csv")
 

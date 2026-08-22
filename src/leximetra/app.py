@@ -16,7 +16,7 @@ FFmpeg must be installed on your system for M4A support:
 
 Usage:
 ------
-python -m hala_rt
+python -m leximetra
 
 Click "Load Audio File" and select a WAV, MP3, FLAC, or M4A file. The
 recording is analyzed on load -- beeps detected, trials cut, speech onsets
@@ -30,14 +30,14 @@ import sys
 
 from PyQt6.QtWidgets import QApplication
 
-from hala_rt.audio.manager import (
+from leximetra.audio.manager import (
     PYDUB_AVAILABLE,
     SOUNDDEVICE_AVAILABLE,
     SOUNDFILE_AVAILABLE,
     AudioManager,
 )
-from hala_rt.data.processing_service import processing_available
-from hala_rt.ui.main_window import HALAMainWindow
+from leximetra.data.processing_service import processing_available
+from leximetra.ui.main_window import HALAMainWindow
 
 
 def self_test():
@@ -50,7 +50,7 @@ def self_test():
     build failure.
     """
     try:
-        from hala_rt.processing.vad import _local_silero_dir, get_model
+        from leximetra.processing.vad import _local_silero_dir, get_model
     except Exception as error:
         print(f"SELF-TEST FAILED: cannot import the pipeline: "
               f"{error.__class__.__name__}: {error}")
@@ -62,7 +62,7 @@ def self_test():
               "download it from GitHub on first use.")
         return 1
 
-    from hala_rt.processing import HalaConfig
+    from leximetra.processing import HalaConfig
 
     missing = [
         str(path)

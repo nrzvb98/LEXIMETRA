@@ -37,7 +37,7 @@ import soundfile as sf
 from .audio_io import load_audio_app_style
 from .config import HalaConfig
 
-logger = logging.getLogger("hala_rt.processing")
+logger = logging.getLogger("leximetra.processing")
 
 
 def analyze_beep_template(path, target_sr=16000):

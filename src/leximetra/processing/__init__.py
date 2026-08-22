@@ -4,7 +4,7 @@
 Extracted from hala_proc.ipynb (Template Matched v5.3); outputs are
 regression-locked to the notebook's.
 
-    from hala_rt.processing import process_audio, HalaConfig
+    from leximetra.processing import process_audio, HalaConfig
     result = process_audio("recording.m4a", output_dir="out")
 """
 from .config import HalaConfig

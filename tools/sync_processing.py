@@ -2,13 +2,13 @@
 
 The pipeline lives in a separate repo (``Hala_Processing``) where it is
 developed and validated against the notebook. This app vendors a copy at
-``src/hala_rt/processing/`` so the app builds — and packages — from a single
+``src/leximetra/processing/`` so the app builds — and packages — from a single
 checkout.
 
-The copy is *generated*, never hand-edited. Upstream's package is itself named
-``hala_rt``, which collides with this app's package, so every self-reference is
-rewritten to ``hala_rt.processing`` on the way in. Because that rewrite is
-deterministic, drift can be detected by re-running it and comparing:
+The copy is *generated*, never hand-edited. Upstream's package is named
+``hala_rt``; here it lives at ``leximetra.processing``, so every self-reference
+is rewritten to that path on the way in. Because that rewrite is deterministic,
+drift can be detected by re-running it and comparing:
 
     python tools/sync_processing.py            # check for drift (exit 1 if any)
     python tools/sync_processing.py --apply    # re-vendor from upstream
@@ -33,19 +33,20 @@ from datetime import date
 from pathlib import Path
 
 APP_ROOT = Path(__file__).resolve().parent.parent
-VENDOR_DIR = APP_ROOT / "src" / "hala_rt" / "processing"
+VENDOR_DIR = APP_ROOT / "src" / "leximetra" / "processing"
 UPSTREAM_PACKAGE = "hala_rt"
 VERSION_FILE = "VERSION"
 
-# Upstream's package name is `hala_rt`; here it is `hala_rt.processing`. Match
+# Upstream's package name is `hala_rt`; here it is `leximetra.processing`. Match
 # the bare token only, so `hala_rt_something` and `_hala_output.csv` are left
-# alone, and skip anything already rewritten (makes the transform idempotent).
-_RENAME = re.compile(r"\bhala_rt\b(?!\.processing)")
+# alone. The transform is idempotent for free now that the two names differ:
+# rewritten text no longer contains the token being matched.
+_RENAME = re.compile(r"\bhala_rt\b")
 
 
 def rewrite(text: str) -> str:
     """Apply the vendoring transform to one module's source."""
-    return _RENAME.sub("hala_rt.processing", text)
+    return _RENAME.sub("leximetra.processing", text)
 
 
 def find_upstream(explicit: str | None) -> Path:

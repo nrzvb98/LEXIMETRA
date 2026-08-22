@@ -1,7 +1,7 @@
 import pytest
 
-from hala_rt.data.csv_io import load_output_csv, write_output_csv
-from hala_rt.data.trial_data import TrialData
+from leximetra.data.csv_io import load_output_csv, write_output_csv
+from leximetra.data.trial_data import TrialData
 
 
 class _ExplodingTrial(TrialData):

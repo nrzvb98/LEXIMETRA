@@ -1,4 +1,4 @@
-from hala_rt.data.output_paths import (
+from leximetra.data.output_paths import (
     default_output_path,
     next_edited_output_path,
     resolve_output_path,

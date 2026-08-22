@@ -1,9 +1,9 @@
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor, QPen, QFont
 
-from hala_rt.data.trial_data import format_seconds
-from hala_rt.ui import palette
-from hala_rt.widgets.waveform_base import BaseWaveformWidget
+from leximetra.data.trial_data import format_seconds
+from leximetra.ui import palette
+from leximetra.widgets.waveform_base import BaseWaveformWidget
 
 
 MIN_ZOOM_WINDOW_SECONDS = 0.05

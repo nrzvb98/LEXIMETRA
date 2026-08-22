@@ -143,7 +143,7 @@ the Dock if used directly.
 ## Usage
 
 ```bash
-python -m hala_rt
+python -m leximetra
 ```
 
 1. Click **Load Audio File** and choose a WAV, MP3, FLAC, or M4A file.
@@ -210,7 +210,7 @@ The analysis pipeline is a *vendored copy* of a separate project and is treated
 as a black box behind one service — see [Automatic analysis](#automatic-analysis).
 
 > **A note on names.** The product is LEXIMETRA; the Python package is still
-> `hala_rt`. Since the `_output` rename the app writes neutral artifact names — the
+> `leximetra`. Since the `_output` rename the app writes neutral artifact names — the
 > `<stem>_output.csv` CSV and `<stem>_output/` sidecar folder — and falls back
 > to reading a legacy `<stem>_hala_output.csv` where one exists, so the
 > existing corpus keeps loading. The vendored pipeline still writes its own
@@ -219,7 +219,7 @@ as a black box behind one service — see [Automatic analysis](#automatic-analys
 > the run is over, so the sidecar carries no `HALA_` names on disk. The
 > pipeline sources are left alone deliberately — editing them means changing
 > `Hala_Processing` and re-vendoring, which would move the pipeline off the
-> commit this app was measured against. The `hala_rt` package name and the
+> commit this app was measured against. The `leximetra` package name and the
 > `HALA_*` environment variables are unchanged. Study tooling that globs
 > `*_hala_output.csv` will not see CSVs the app writes under the new name.
 
@@ -232,7 +232,7 @@ LEXIMETRA/
     output_schema.md
     integration_plan.md
   src/
-    hala_rt/
+    leximetra/
       app.py
       __main__.py
       audio/
@@ -250,13 +250,13 @@ LEXIMETRA/
 
 ### Entry point & controller
 
-- **`src/hala_rt/app.py`** — Application entry point (`python -m hala_rt` or `leximetra`).
+- **`src/leximetra/app.py`** — Application entry point (`python -m leximetra` or `leximetra`).
   Prints a startup dependency report (pydub / soundfile / sounddevice, FFmpeg, and
   whether automatic analysis is available), creates the `QApplication`, and shows
   the main window. Degrades gracefully when optional backends are missing. Also
   holds `self_test()`, which the macOS build script runs against the packaged
   binary (`HALA_SELF_TEST=1`) to prove a bundle can actually analyze.
-- **`src/hala_rt/ui/main_window.py`** — `HALAMainWindow`, the controller. Owns session
+- **`src/leximetra/ui/main_window.py`** — `HALAMainWindow`, the controller. Owns session
   state (the list of `TrialData`, the current trial index, unsaved-changes
   tracking, the output CSV path) and all behavior: playback timer and transport,
   global/trial cursor handling, trial add/delete, marker placement (beep / first
@@ -266,42 +266,42 @@ LEXIMETRA/
 
 ### UI construction & styling
 
-- **`src/hala_rt/ui/main_window_ui.py`** — `build_ui(window)` assembles the entire widget tree
+- **`src/leximetra/ui/main_window_ui.py`** — `build_ui(window)` assembles the entire widget tree
   (header, status line, transport controls, global timeline, trial navigation,
   trial detail view with zoom, the output table, session info, and the shortcut
   hint) and attaches each widget onto the window the way a generated `setupUi`
   would. It builds layout only — the controller keeps the behavior.
-- **`src/hala_rt/ui/theme.py`** — Qt style sheets (QSS) composed from palette tokens via
+- **`src/leximetra/ui/theme.py`** — Qt style sheets (QSS) composed from palette tokens via
   `string.Template`, plus per-button styling helpers (load / delete / marker
   buttons). Keeps style strings out of the widget tree.
-- **`src/hala_rt/ui/palette.py`** — Centralized design tokens (the slate neutral scale, the blue
+- **`src/leximetra/ui/palette.py`** — Centralized design tokens (the slate neutral scale, the blue
   primary accent, the red playhead, and the beep / first-speech / main-response
   marker colors). Solid colors are hex strings that drop into both QSS and
   `QColor`; translucent fills are RGBA tuples.
 
 ### Waveform widgets
 
-- **`src/hala_rt/widgets/waveform_base.py`** — `BaseWaveformWidget`, shared rendering machinery for
+- **`src/leximetra/widgets/waveform_base.py`** — `BaseWaveformWidget`, shared rendering machinery for
   both timelines. Caches the static layer (waveform + markers) into a pixmap and
   paints a cheap dynamic overlay (the moving playhead) on top each frame; handles
   time↔pixel coordinate mapping and selection state. Subclasses supply the
   visible window, cache key, and draw routines.
-- **`src/hala_rt/widgets/simple_waveform.py`** — `SimpleWaveformWidget`, the **Global Timeline**. Shows
+- **`src/leximetra/widgets/simple_waveform.py`** — `SimpleWaveformWidget`, the **Global Timeline**. Shows
   the whole session with committed trial regions, the in-progress draft range,
   and the playback position; click or drag to place the next trial-end cursor.
-- **`src/hala_rt/widgets/trial_viz.py`** — `TrialWaveformWidget`, the **Trial Detail View**. Renders a
+- **`src/leximetra/widgets/trial_viz.py`** — `TrialWaveformWidget`, the **Trial Detail View**. Renders a
   single trial slice with the beep / first-speech / main-response markers, speech
   segments, and the playhead, with zoom (down to 50 ms) and auto-pan.
 
 ### Data model
 
-- **`src/hala_rt/data/trial_data.py`** — The `TrialData` dataclass and CSV row model: column order
+- **`src/leximetra/data/trial_data.py`** — The `TrialData` dataclass and CSV row model: column order
   (`CSV_COLUMNS`), boolean/seconds/RT column groupings, formatting (seconds to 4
   decimals, RT to 0.1 ms), parsing helpers, row↔model conversion, and
   `validate()` (start ≥ 0, end after start, beep inside the window, no negatives).
-- **`src/hala_rt/data/csv_io.py`** — CSV file loading and writing, including schema checks.
-- **`src/hala_rt/data/output_paths.py`** — Default output path and edited-copy naming policy.
-- **`src/hala_rt/ui/table_columns.py`** — Presentation metadata for the output table: human
+- **`src/leximetra/data/csv_io.py`** — CSV file loading and writing, including schema checks.
+- **`src/leximetra/data/output_paths.py`** — Default output path and edited-copy naming policy.
+- **`src/leximetra/ui/table_columns.py`** — Presentation metadata for the output table: human
   labels, per-column tooltips (each naming its CSV field), and the width-fitting
   logic that distributes viewport space without ever clipping a header label.
 
@@ -311,16 +311,16 @@ The pipeline that detects beeps and speech is developed and validated in a
 separate repository, **Hala_Processing**, and vendored here so the app builds
 and packages from one checkout.
 
-- **`src/hala_rt/processing/`** — the vendored pipeline. **Generated, not
-  hand-edited.** Upstream's package is also called `hala_rt`, so every
-  self-reference is rewritten to `hala_rt.processing` on the way in.
-- **`src/hala_rt/data/processing_service.py`** — `run_processing()`, the only
+- **`src/leximetra/processing/`** — the vendored pipeline. **Generated, not
+  hand-edited.** Upstream's package is also called `leximetra`, so every
+  self-reference is rewritten to `leximetra.processing` on the way in.
+- **`src/leximetra/data/processing_service.py`** — `run_processing()`, the only
   entry point the app uses. Returns a typed `ProcessingOutcome` and **never
   raises**: a missing dependency, a recording with no beeps, and a cancelled run
   are all statuses to report, because the manual workflow is always still there.
   Imports torch lazily, so launching the app costs nothing for anyone who only
   verifies existing CSVs.
-- **`src/hala_rt/ui/processing_worker.py`** — runs the service on a `QThread`
+- **`src/leximetra/ui/processing_worker.py`** — runs the service on a `QThread`
   so the window stays responsive, with a backstop that keeps any exception from
   escaping `run()` (PyQt6 turns those into a fatal abort of the process).
 

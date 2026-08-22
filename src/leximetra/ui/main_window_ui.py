@@ -21,11 +21,11 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from hala_rt.data.trial_data import CSV_COLUMNS
-from hala_rt.ui import palette, theme
-from hala_rt.ui.table_columns import COLUMN_HELP, COLUMN_LABELS, COLUMN_WIDTHS
-from hala_rt.widgets.simple_waveform import SimpleWaveformWidget
-from hala_rt.widgets.trial_viz import TrialWaveformWidget
+from leximetra.data.trial_data import CSV_COLUMNS
+from leximetra.ui import palette, theme
+from leximetra.ui.table_columns import COLUMN_HELP, COLUMN_LABELS, COLUMN_WIDTHS
+from leximetra.widgets.simple_waveform import SimpleWaveformWidget
+from leximetra.widgets.trial_viz import TrialWaveformWidget
 
 
 def build_ui(window):

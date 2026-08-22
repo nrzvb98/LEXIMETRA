@@ -1,6 +1,6 @@
 """Run the HALA pipeline on a recording and place its output for the app.
 
-Sits between the controller and ``hala_rt.processing``: the controller asks for
+Sits between the controller and ``leximetra.processing``: the controller asks for
 one recording to be processed and gets back a typed outcome, never an
 exception. Automatic processing is a convenience — if it cannot run, the user
 still has the manual trial-cutting workflow, so every failure here is a status
@@ -9,7 +9,7 @@ to report rather than an error to raise.
 Import-light on purpose. The pipeline pulls in torch (~1.7 s), which sessions
 that only verify an existing CSV should never pay, so it is imported lazily
 inside :func:`run_processing`. Nothing at module scope imports it, and neither
-does this module import Qt — threading lives in ``hala_rt.ui``.
+does this module import Qt — threading lives in ``leximetra.ui``.
 
 Artifact layout for ``/sessions/p001.m4a``::
 
@@ -107,7 +107,7 @@ def processing_available():
 
 def _load_process_audio():
     """Import the pipeline entry point. Seam for tests, which fake it."""
-    from hala_rt.processing import process_audio
+    from leximetra.processing import process_audio
 
     return process_audio
 

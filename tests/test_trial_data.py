@@ -1,6 +1,6 @@
 import pytest
 
-from hala_rt.data.trial_data import TrialData, parse_bool, parse_optional_ms
+from leximetra.data.trial_data import TrialData, parse_bool, parse_optional_ms
 
 
 def test_trial_data_derives_global_marker_times():

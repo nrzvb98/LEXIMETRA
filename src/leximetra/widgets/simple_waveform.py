@@ -1,8 +1,8 @@
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor, QFont, QPen
 
-from hala_rt.ui import palette
-from hala_rt.widgets.waveform_base import BaseWaveformWidget
+from leximetra.ui import palette
+from leximetra.widgets.waveform_base import BaseWaveformWidget
 
 
 class SimpleWaveformWidget(BaseWaveformWidget):

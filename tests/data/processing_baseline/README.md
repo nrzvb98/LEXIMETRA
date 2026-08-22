@@ -2,7 +2,7 @@
 
 Outputs of the HALA processing pipeline for `examples/audio/trial_sample.m4a`
 (24.5 s, 12 trials), used by `tests/test_processing_regression.py` to prove the
-vendored copy in `src/hala_rt/processing/` still reproduces the validated
+vendored copy in `src/leximetra/processing/` still reproduces the validated
 pipeline.
 
 **Generated from upstream, before vendoring** — `Hala_Processing` at commit

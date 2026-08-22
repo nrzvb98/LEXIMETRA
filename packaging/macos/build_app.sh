@@ -73,7 +73,7 @@ else
     echo "  To include it: ${VENV_PYTHON} -m pip install -e \".[processing]\""
 fi
 
-if [[ "${BUNDLE_PROCESSING}" == "1" && ! -f "${ROOT_DIR}/src/hala_rt/processing/silero/hubconf.py" ]]; then
+if [[ "${BUNDLE_PROCESSING}" == "1" && ! -f "${ROOT_DIR}/src/leximetra/processing/silero/hubconf.py" ]]; then
     echo "Silero VAD is not vendored, so the packaged app would try to download" >&2
     echo "it from GitHub on first run." >&2
     echo "Vendor it with: ${VENV_PYTHON} tools/vendor_silero.py --apply" >&2
@@ -87,7 +87,7 @@ DIST_DIR="${ROOT_DIR}/dist"
 APP_PATH="${DIST_DIR}/${APP_NAME}.app"
 RAW_DIST_PATH="${DIST_DIR}/${APP_NAME}"
 ZIP_PATH="${DIST_DIR}/${ZIP_NAME}"
-LAUNCHER="${SCRIPT_DIR}/hala_rt_launcher.py"
+LAUNCHER="${SCRIPT_DIR}/leximetra_launcher.py"
 APP_RESOURCES_DIR="${APP_PATH}/Contents/Resources"
 APP_ICON="${SCRIPT_DIR}/icons/leximetra-icon.icns"
 
@@ -99,7 +99,7 @@ export PYINSTALLER_CONFIG_DIR="${BUILD_DIR}/pyinstaller_config"
 
 PROCESSING_ARGS=()
 if [[ "${BUNDLE_PROCESSING}" == "1" ]]; then
-    PROCESSING_SRC="${ROOT_DIR}/src/hala_rt/processing"
+    PROCESSING_SRC="${ROOT_DIR}/src/leximetra/processing"
     PROCESSING_ARGS=(
         --collect-all "torch"
         # Silero's utils_vad.py imports torchaudio and packaging, but it ships
@@ -107,9 +107,9 @@ if [[ "${BUNDLE_PROCESSING}" == "1" ]]; then
         # for imports. Without these the app builds and then fails at analysis.
         --collect-all "torchaudio"
         --hidden-import "packaging.version"
-        --add-data "${PROCESSING_SRC}/templates:hala_rt/processing/templates"
-        --add-data "${PROCESSING_SRC}/silero:hala_rt/processing/silero"
-        --add-data "${PROCESSING_SRC}/VERSION:hala_rt/processing"
+        --add-data "${PROCESSING_SRC}/templates:leximetra/processing/templates"
+        --add-data "${PROCESSING_SRC}/silero:leximetra/processing/silero"
+        --add-data "${PROCESSING_SRC}/VERSION:leximetra/processing"
     )
 fi
 

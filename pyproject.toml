@@ -23,7 +23,7 @@ dev = [
 packaging = [
     "pyinstaller>=6.20",
 ]
-# Automatic beep/VAD processing (src/hala_rt/processing). Optional: without it
+# Automatic beep/VAD processing (src/leximetra/processing). Optional: without it
 # the app runs exactly as before and reports the capability as unavailable.
 # torchaudio is unused by the pipeline but required by Silero's hubconf.
 # No macOS x86_64 wheels exist for these torch versions, so the Intel build
@@ -36,15 +36,15 @@ processing = [
 ]
 
 [project.scripts]
-leximetra = "hala_rt.app:main"
+leximetra = "leximetra.app:main"
 # Kept so existing shells and notes that call `hala-rt` still work.
-hala-rt = "hala_rt.app:main"
+hala-rt = "leximetra.app:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-"hala_rt.processing" = [
+"leximetra.processing" = [
     "templates/*.wav",
     "VERSION",
     # Bundled Silero VAD, so the model loads locally instead of being fetched

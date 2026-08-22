@@ -11,13 +11,13 @@ import csv
 
 import pytest
 
-from hala_rt.data import processing_service
-from hala_rt.data.processing_service import (
+from leximetra.data import processing_service
+from leximetra.data.processing_service import (
     ProcessingStatus,
     processing_available,
     run_processing,
 )
-from hala_rt.data.trial_data import CSV_COLUMNS
+from leximetra.data.trial_data import CSV_COLUMNS
 
 
 def write_output_csv(path, trial_count):

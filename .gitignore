@@ -34,5 +34,5 @@ dist/
 # Source assets and test fixtures, not user data. The beep templates drive
 # detection (the vendored pipeline cannot run without them) and the frozen
 # baseline is what proves that pipeline was vendored faithfully.
-!src/hala_rt/processing/templates/*.wav
+!src/leximetra/processing/templates/*.wav
 !tests/data/**/*.csv

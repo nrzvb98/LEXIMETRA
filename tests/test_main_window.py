@@ -7,8 +7,8 @@ view window -- the logic the CSV and path tests do not reach.
 
 import pytest
 
-from hala_rt.data.csv_io import write_output_csv
-from hala_rt.data.trial_data import CSV_COLUMNS, TrialData
+from leximetra.data.csv_io import write_output_csv
+from leximetra.data.trial_data import CSV_COLUMNS, TrialData
 
 from conftest import add_trial_ending_at, trial_bounds
 
@@ -212,7 +212,7 @@ def test_saving_round_trips_through_the_csv(window):
     window.set_rt_from_playhead("rt_main_response_ms")
     window.save_output_csv()
 
-    from hala_rt.data.csv_io import load_output_csv
+    from leximetra.data.csv_io import load_output_csv
 
     reloaded = load_output_csv(window.output_csv_path)
     assert reloaded == window.session_data

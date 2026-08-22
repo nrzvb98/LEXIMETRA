@@ -7,7 +7,7 @@ window builds structure, not strings, and every color resolves to one token in
 
 from string import Template
 
-from hala_rt.ui import palette
+from leximetra.ui import palette
 
 
 APP_STYLESHEET = Template("""

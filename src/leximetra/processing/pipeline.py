@@ -1,6 +1,6 @@
 """End-to-end HALA processing: audio in, three CSVs out.
 
-    from hala_rt.processing import process_audio, HalaConfig
+    from leximetra.processing import process_audio, HalaConfig
     result = process_audio("recording.m4a", HalaConfig(), output_dir="out")
     result.df_output          # software-format table (…_hala_output.csv)
 
@@ -30,7 +30,7 @@ from .audio_io import load_audio_app_style
 from .export import save_hala_software_csv
 from .vad import get_model, get_trial_speech_timestamps, read_audio_safe
 
-logger = logging.getLogger("hala_rt.processing")
+logger = logging.getLogger("leximetra.processing")
 
 FINAL_COLUMNS = [
     'trial_name',
@@ -69,7 +69,7 @@ def process_audio(
     """Run the full HALA pipeline on one recording.
 
     model: optional preloaded (silero_model, get_speech_ts) tuple from
-        hala_rt.processing.vad.get_model(), so a host app can load Silero once.
+        leximetra.processing.vad.get_model(), so a host app can load Silero once.
     on_progress: optional callable(stage: str, done: int, total: int).
     """
     cfg = config or HalaConfig()

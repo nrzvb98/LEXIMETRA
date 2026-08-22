@@ -18,7 +18,7 @@ import torch
 from .audio_io import load_audio_app_style
 from .config import HalaConfig
 
-logger = logging.getLogger("hala_rt.processing")
+logger = logging.getLogger("leximetra.processing")
 
 _MODEL_CACHE = None
 

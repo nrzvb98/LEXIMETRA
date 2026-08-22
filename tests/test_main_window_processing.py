@@ -12,10 +12,10 @@ import numpy as np
 import pytest
 from PyQt6.QtWidgets import QMessageBox
 
-from hala_rt.audio.manager import AudioManager
-from hala_rt.data.processing_service import ProcessingOutcome, ProcessingStatus
-from hala_rt.data.trial_data import CSV_COLUMNS
-from hala_rt.ui.main_window import HALAMainWindow
+from leximetra.audio.manager import AudioManager
+from leximetra.data.processing_service import ProcessingOutcome, ProcessingStatus
+from leximetra.data.trial_data import CSV_COLUMNS
+from leximetra.ui.main_window import HALAMainWindow
 
 
 SAMPLE_RATE = 16000
@@ -89,7 +89,7 @@ def processing(monkeypatch):
 
         monkeypatch.setattr(HALAMainWindow, "_run_auto_processing", run)
         monkeypatch.setattr(
-            "hala_rt.ui.main_window.processing_available", lambda: True
+            "leximetra.ui.main_window.processing_available", lambda: True
         )
         return calls
 
@@ -173,7 +173,7 @@ def test_analysis_is_skipped_when_unavailable(
     loaded_window, audio_file, monkeypatch
 ):
     write_csv(audio_file.parent / "session_output.csv", 2)
-    monkeypatch.setattr("hala_rt.ui.main_window.processing_available", lambda: False)
+    monkeypatch.setattr("leximetra.ui.main_window.processing_available", lambda: False)
     called = []
     monkeypatch.setattr(
         HALAMainWindow,
@@ -249,7 +249,7 @@ def test_an_unreadable_csv_outranks_the_analysis_status(
         self.output_csv_path.write_text("not,a,valid,schema\n1,2,3,4\n", encoding="utf-8")
         return success(3)
 
-    monkeypatch.setattr("hala_rt.ui.main_window.processing_available", lambda: True)
+    monkeypatch.setattr("leximetra.ui.main_window.processing_available", lambda: True)
     monkeypatch.setattr(HALAMainWindow, "_run_auto_processing", run)
 
     loaded_window._load_audio_file(audio_file)

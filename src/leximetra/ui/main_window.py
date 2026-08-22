@@ -13,11 +13,11 @@ from PyQt6.QtWidgets import (
     QTableWidgetItem,
 )
 
-from hala_rt.audio.manager import AudioManager
-from hala_rt.data.csv_io import load_output_csv, write_output_csv
-from hala_rt.data.output_paths import next_edited_output_path, resolve_output_path
-from hala_rt.data.processing_service import ProcessingStatus, processing_available
-from hala_rt.data.trial_data import (
+from leximetra.audio.manager import AudioManager
+from leximetra.data.csv_io import load_output_csv, write_output_csv
+from leximetra.data.output_paths import next_edited_output_path, resolve_output_path
+from leximetra.data.processing_service import ProcessingStatus, processing_available
+from leximetra.data.trial_data import (
     BOOLEAN_COLUMNS,
     CSV_COLUMNS,
     MS_DECIMALS,
@@ -31,10 +31,10 @@ from hala_rt.data.trial_data import (
     parse_nonnegative_int,
     parse_optional_ms,
 )
-from hala_rt.ui import theme
-from hala_rt.ui.main_window_ui import build_ui
-from hala_rt.ui.processing_worker import ProcessingWorker
-from hala_rt.ui.table_columns import COLUMN_LABELS, resize_table_columns
+from leximetra.ui import theme
+from leximetra.ui.main_window_ui import build_ui
+from leximetra.ui.processing_worker import ProcessingWorker
+from leximetra.ui.table_columns import COLUMN_LABELS, resize_table_columns
 
 
 MIN_TRIAL_DURATION_SECONDS = 0.01

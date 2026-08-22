@@ -7,9 +7,9 @@ the wiring, not Qt's threading.
 
 import pytest
 
-from hala_rt.data.processing_service import ProcessingOutcome, ProcessingStatus
-from hala_rt.ui import processing_worker
-from hala_rt.ui.processing_worker import ProcessingWorker
+from leximetra.data.processing_service import ProcessingOutcome, ProcessingStatus
+from leximetra.ui import processing_worker
+from leximetra.ui.processing_worker import ProcessingWorker
 
 
 @pytest.fixture

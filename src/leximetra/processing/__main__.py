@@ -1,4 +1,4 @@
-"""CLI: python -m hala_rt.processing INPUT.wav [-o OUTDIR] [--config cfg.json]"""
+"""CLI: python -m leximetra.processing INPUT.wav [-o OUTDIR] [--config cfg.json]"""
 from __future__ import annotations
 
 import argparse
@@ -11,7 +11,7 @@ from .pipeline import process_audio
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
-        prog="hala_rt.processing",
+        prog="leximetra.processing",
         description="HALA reaction-time pipeline: audio in, per-trial RT/hesitation CSVs out.",
     )
     parser.add_argument("input", nargs="?", help="Audio file (.wav/.m4a/.mp3/.flac)")

@@ -7,7 +7,7 @@ the available viewport.
 
 from PyQt6.QtGui import QFont, QFontMetrics
 
-from hala_rt.data.trial_data import CSV_COLUMNS
+from leximetra.data.trial_data import CSV_COLUMNS
 
 
 COLUMN_LABELS = {

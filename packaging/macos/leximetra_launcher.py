@@ -2,7 +2,7 @@
 
 import sys
 
-from hala_rt.app import main
+from leximetra.app import main
 
 
 if __name__ == "__main__":

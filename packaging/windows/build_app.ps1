@@ -14,7 +14,7 @@ $RootDir = Resolve-Path (Join-Path $ScriptDir "..\..")
 $DistDir = Join-Path $RootDir "dist"
 $BuildDir = Join-Path $RootDir "build\windows\$TargetArch"
 $AppDir = Join-Path $DistDir $AppName
-$Launcher = Join-Path $ScriptDir "hala_rt_launcher.py"
+$Launcher = Join-Path $ScriptDir "leximetra_launcher.py"
 $IconPath = Join-Path $ScriptDir "icons\leximetra-icon.ico"
 $FFmpegPrefix = if ($env:FFMPEG_PREFIX) {
     $env:FFMPEG_PREFIX

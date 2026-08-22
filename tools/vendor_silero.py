@@ -25,7 +25,7 @@ import sys
 from pathlib import Path
 
 APP_ROOT = Path(__file__).resolve().parent.parent
-VENDOR_DIR = APP_ROOT / "src" / "hala_rt" / "processing" / "silero"
+VENDOR_DIR = APP_ROOT / "src" / "leximetra" / "processing" / "silero"
 DEFAULT_SOURCE = Path.home() / ".cache" / "torch" / "hub" / "snakers4_silero-vad_master"
 
 # The JIT path only: hubconf imports silero_vad.utils_vad, model.py pulls in
