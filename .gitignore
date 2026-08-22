@@ -28,11 +28,14 @@ dist/
 *.m4a
 *.m4v
 
-# Allow intentional examples
-!examples/audio/*.m4a
+# No exception for examples/audio/. The sample recording the regression gate
+# runs on is a real voice recording, so it is not distributed with this public
+# repository -- keep your local copy at examples/audio/trial_sample.m4a and the
+# gate runs; without it those tests skip themselves.
 
 # Source assets and test fixtures, not user data. The beep templates drive
 # detection (the vendored pipeline cannot run without them) and the frozen
-# baseline is what proves that pipeline was vendored faithfully.
+# baseline is what proves that pipeline was vendored faithfully. The baseline is
+# timings only -- no audio, nothing identifying.
 !src/leximetra/processing/templates/*.wav
 !tests/data/**/*.csv

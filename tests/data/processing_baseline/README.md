@@ -5,6 +5,12 @@ Outputs of the HALA processing pipeline for `examples/audio/trial_sample.m4a`
 vendored copy in `src/leximetra/processing/` still reproduces the validated
 pipeline.
 
+**The recording is not in this repository.** It is a real voice recording, and
+this repository is public, so it is gitignored and kept locally at
+`examples/audio/trial_sample.m4a`. These baselines — timings only, nothing
+identifying — are committed. With the recording present the gate runs; without
+it, `test_processing_regression.py` skips itself.
+
 **Generated from upstream, before vendoring** — `Hala_Processing` at commit
 `675eeea`, package version 1.0.0, on 2026-08-12. That ordering is the point: a
 baseline generated from the vendored copy would only catch future drift, not a

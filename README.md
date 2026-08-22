@@ -245,7 +245,7 @@ LEXIMETRA/
   tools/
     sync_processing.py
     vendor_silero.py
-  examples/audio/
+  examples/audio/    # local only -- not distributed, see below
 ```
 
 ### Entry point & controller

@@ -1,9 +1,10 @@
 """Proof that the vendored pipeline still reproduces the validated one.
 
 ``src/leximetra/processing`` is a generated copy of the ``Hala_Processing``
-package (see ``tools/sync_processing.py``). These tests run it on the committed
-sample recording and compare against baselines frozen from upstream *before*
-the copy was made — so a mistake in vendoring, a dependency that resolves
+package (see ``tools/sync_processing.py``). These tests run it on the sample
+recording at ``examples/audio/trial_sample.m4a`` -- gitignored, not distributed
+with this repository -- and compare against baselines frozen from upstream
+*before* the copy was made — so a mistake in vendoring, a dependency that resolves
 differently on this Python, or an accidental edit to the copy all show up here.
 
 This is the vendoring gate, not the full fidelity gate: upstream's
@@ -13,6 +14,9 @@ against 2.1 GB of frozen notebook references that cannot live in this repo.
 Skipped when the ``processing`` extra is not installed:
 
     python -m pip install -e ".[processing]"
+
+...and skipped when the sample recording is absent, which is the normal state of
+a fresh clone.
 """
 
 import filecmp
