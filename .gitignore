@@ -41,6 +41,10 @@ dist/
 # vendored pipeline cannot run without them.
 !src/leximetra/processing/templates/*.wav
 
+# Working notes that name real sessions and local paths. Kept locally, not
+# distributed.
+docs/integration_plan.md
+
 # The frozen baselines are the sample session's derived timings -- the same data
 # as the recording itself, so they live beside it locally rather than shipping
 # here. Only the README, which explains what they are, is distributed.

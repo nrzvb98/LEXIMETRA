@@ -230,7 +230,7 @@ column reference.
 | `rt_first_speech_ms` | Beep → first sound, including fillers (ms). |
 | `rt_main_response_ms` | Beep → main word, skipping fillers (ms). |
 | `prefiller_present` | Whether an `Umm… Word` pattern was detected. |
-| `flag_anticipatory` | Response came in under 150 ms — physiologically too fast to be a real response. |
+| `flag_anticipatory` | First speech at or under 150 ms after the beep — physiologically too fast. |
 | `flag_timeout` | No response detected in the trial window. |
 | `segments_count` | Number of distinct speech bursts in the trial. |
 
@@ -264,7 +264,6 @@ LEXIMETRA/
   .gitignore
   docs/
     output_schema.md
-    integration_plan.md
   src/
     leximetra/
       app.py
@@ -389,10 +388,8 @@ later drift. See that directory's README for scope and re-baselining.
 
 - **`CHANGELOG.md`** — User-visible changes per release, with the vendored
   pipeline version each release shipped.
-- **`docs/output_schema.md`** — The canonical CSV output schema (Phase 5).
-- **`docs/integration_plan.md`** — How automatic analysis was integrated: the
-  decisions taken, the corrections made along the way, and what is deliberately
-  left undone (Windows and Intel builds, the ONNX size optimization).
+- **`docs/output_schema.md`** — The canonical CSV output schema: columns, value
+  encoding, how absent values round-trip, and what is validated on load.
 
 ## License
 
