@@ -1,9 +1,10 @@
 # Changelog
 
-User-visible changes to LEXIMETRA, newest first. Each release also names the
-vendored processing pipeline it ships (pipeline version and upstream commit;
-the live values are in `src/leximetra/processing/VERSION`), because most
-behaviour changes arrive through pipeline syncs rather than app code.
+User-visible changes to LEXIMETRA, newest first. Releases up to 0.2.x also name
+the processing pipeline version they shipped, from when that pipeline was
+vendored from a separate repository; `src/leximetra/processing/VERSION` records
+where it came from. It is maintained in this repository now, so later entries
+describe pipeline changes like any other change.
 
 Add to **Unreleased** in the same commit as the change it describes; a
 `release:` commit moves that section under a version heading with the date.

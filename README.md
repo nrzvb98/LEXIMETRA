@@ -241,21 +241,18 @@ the UI module builds *structure* (no logic), styling resolves through
 `theme` / `palette` tokens, and output path/CSV logic lives in the data layer.
 Audio and the data model are independent, GUI-agnostic layers.
 
-The analysis pipeline is a *vendored copy* of a separate project and is treated
-as a black box behind one service — see [Automatic analysis](#automatic-analysis).
+The analysis pipeline lives in `src/leximetra/processing/` and is treated as a
+black box behind one service — see [Automatic analysis](#automatic-analysis).
 
 > **A note on names.** Nothing this app writes carries `HALA` any more: the
 > `<stem>_output.csv` CSV, the `<stem>_output/` sidecar, and inside it
-> `Slices/` and the two `<stem>_*_Results.csv` files. The vendored pipeline
-> produces those names itself — `tools/sync_processing.py` rewrites upstream's
-> branding on the way in, so the pipeline sources are still generated rather
-> than hand-edited, and still derive from a named upstream commit.
+> `Slices/` and the two `<stem>_*_Results.csv` files. The pipeline produces
+> those names itself.
 >
-> Two `hala` names survive on purpose. A legacy `<stem>_hala_output.csv` is
+> One `hala` name survives on purpose: a legacy `<stem>_hala_output.csv` is
 > still read where one exists, so recordings verified under 0.2.x keep loading.
-> And `Hala_Processing` is the upstream repo's actual name, which this repo
-> only refers to. Study tooling that globs `*_hala_output.csv` will not see
-> CSVs written under the new name.
+> Study tooling that globs `*_hala_output.csv` will not see CSVs written under
+> the new name.
 
 ```text
 LEXIMETRA/
@@ -270,13 +267,12 @@ LEXIMETRA/
       __main__.py
       audio/
       data/
-      processing/     # vendored pipeline (generated -- do not edit)
+      processing/     # beep detection, slicing, VAD, RT metrics
       ui/
       widgets/
   tests/
     data/processing_baseline/
   tools/
-    sync_processing.py
     vendor_silero.py
   examples/audio/    # local only -- not distributed, see below
 ```
@@ -340,16 +336,14 @@ LEXIMETRA/
 
 ## Automatic analysis
 
-The pipeline that detects beeps and speech is developed and validated in a
-separate repository, **Hala_Processing**, and vendored here so the app builds
-and packages from one checkout.
+The pipeline that detects beeps and speech lives in this repository and is
+maintained here.
 
-- **`src/leximetra/processing/`** — the vendored pipeline. **Generated, not
-  hand-edited.** Upstream's package is named `hala_rt`; `sync_processing.py`
-  rewrites that to `leximetra.processing` on the way in, along with upstream's
-  type names, its one environment variable, and the names it gives the files it
-  writes. Because those rewrites are deterministic, the tool detects drift by
-  re-running them and comparing.
+- **`src/leximetra/processing/`** — beep detection, trial slicing, Silero VAD,
+  and RT metrics. It began as a copy of a separate project — `VERSION` records
+  which, and at what commit — but that project is no longer a source of truth:
+  changes are made here, and `tests/test_processing_regression.py` is what
+  holds the behaviour in place.
 - **`src/leximetra/data/processing_service.py`** — `run_processing()`, the only
   entry point the app uses. Returns a typed `ProcessingOutcome` and **never
   raises**: a missing dependency, a recording with no beeps, and a cancelled run
@@ -362,32 +356,29 @@ and packages from one checkout.
 
 ### Changing the pipeline
 
-Edit it **upstream**, validate there with `regression_check.py` (which has the
-full multi-recording reference set), commit, then re-vendor:
-
-```bash
-python tools/sync_processing.py --apply --upstream ../../Hala_Processing
-```
-
-`tools/sync_processing.py` with no arguments checks for drift and exits 1 with a
-diff if the vendored copy no longer matches upstream, which is what makes "edit
-upstream, not the copy" enforceable. `tools/vendor_silero.py` does the same job
-for the bundled Silero VAD model.
-
-Then confirm nothing moved:
+Edit `src/leximetra/processing/` directly, then confirm nothing moved:
 
 ```bash
 python -m pytest tests/test_processing_regression.py
 ```
 
-That compares against `tests/data/processing_baseline/`, frozen from upstream
-*before* the copy was made, so it catches vendoring mistakes and not merely
-later drift. See that directory's README for scope and re-baselining.
+That runs the pipeline end to end and byte-compares its three CSVs and its
+twelve trial slices against `tests/data/processing_baseline/`. Any change in
+detection, slicing, or metrics shows up as a diff on the first differing row.
+
+The gate needs a recording and the baselines derived from it, neither of which
+ships with this repository — see that directory's README for what they are, how
+to obtain them, and when re-baselining is the right answer rather than a bug.
+Without them the module skips itself, so a change made without that data is
+unproven; get it in front of someone who has it before relying on it.
+
+`tools/vendor_silero.py` regenerates the bundled Silero VAD model from torch's
+hub cache. It is unrelated to the pipeline sources and is still a generator —
+do not hand-edit `src/leximetra/processing/silero/`.
 
 ### Reference
 
-- **`CHANGELOG.md`** — User-visible changes per release, with the vendored
-  pipeline version each release shipped.
+- **`CHANGELOG.md`** — User-visible changes per release.
 - **`docs/output_schema.md`** — The canonical CSV output schema: columns, value
   encoding, how absent values round-trip, and what is validated on load.
 

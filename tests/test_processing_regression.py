@@ -1,23 +1,27 @@
-"""Proof that the vendored pipeline still reproduces the validated one.
+"""Proof that the pipeline still produces what it was validated to produce.
 
-``src/leximetra/processing`` is a generated copy of the ``Hala_Processing``
-package (see ``tools/sync_processing.py``). These tests run it on the sample
-recording at ``examples/audio/trial_sample.m4a`` -- gitignored, not distributed
-with this repository -- and compare against baselines frozen from upstream
-*before* the copy was made — so a mistake in vendoring, a dependency that resolves
-differently on this Python, or an accidental edit to the copy all show up here.
+``src/leximetra/processing`` is maintained in this repository, so nothing else
+holds its behaviour in place: this module is the gate. It runs the pipeline end
+to end on the sample recording at ``examples/audio/trial_sample.m4a`` and
+byte-compares the three CSVs and the twelve trial slices against baselines
+frozen when that behaviour was validated. An edit that changes detection,
+slicing or metrics shows up here as a diff on the first differing row -- as does
+a dependency that resolves differently on this Python.
 
-This is the vendoring gate, not the full fidelity gate: upstream's
-``regression_check.py`` additionally byte-compares two longer recordings
-against 2.1 GB of frozen notebook references that cannot live in this repo.
+A diff is not automatically a bug. When the change is intended, re-baseline and
+say why; ``tests/data/processing_baseline/README.md`` covers when that is the
+right answer.
+
+Neither the recording nor the baselines ship with this repository -- both are
+the sample session's data. Without them this module skips itself, which means a
+pipeline change made on a machine that lacks them is unproven.
 
 Skipped when the ``processing`` extra is not installed:
 
     python -m pip install -e ".[processing]"
 
 ...and skipped when the recording or the frozen baselines are absent, which is
-the normal state of a fresh clone: both are the sample session's data and are
-kept locally rather than distributed. See ``tests/data/processing_baseline/``.
+the normal state of a fresh clone. See ``tests/data/processing_baseline/``.
 """
 
 import filecmp
