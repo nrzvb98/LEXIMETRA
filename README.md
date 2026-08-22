@@ -164,6 +164,7 @@ installed — place the trial-end cursor on the **Global Timeline** and click
 | `/sessions/p001_output/Slices/Trial_NNN.wav` | Per-trial audio from the analysis |
 | `/sessions/p001_output/p001_Full_Analysis_Results.csv` | Absolute beep/speech/hesitation timings |
 | `/sessions/p001_output/p001_Analysis_Results.csv` | RT and response-type summary |
+| `/sessions/p001_output/p001_beep_pairing_report.csv` | Written only when a beep did not pair 1:1 — quiet-beep recoveries land here |
 
 Re-analyzing renames the existing output CSV to `p001_output_backup.csv`
 before writing a new one, so hand-verified work is never overwritten silently.
@@ -311,8 +312,11 @@ separate repository, **Hala_Processing**, and vendored here so the app builds
 and packages from one checkout.
 
 - **`src/leximetra/processing/`** — the vendored pipeline. **Generated, not
-  hand-edited.** Upstream's package is also called `leximetra`, so every
-  self-reference is rewritten to `leximetra.processing` on the way in.
+  hand-edited.** Upstream's package is named `hala_rt`; `sync_processing.py`
+  rewrites that to `leximetra.processing` on the way in, along with upstream's
+  type names, its one environment variable, and the names it gives the files it
+  writes. Because those rewrites are deterministic, the tool detects drift by
+  re-running them and comparing.
 - **`src/leximetra/data/processing_service.py`** — `run_processing()`, the only
   entry point the app uses. Returns a typed `ProcessingOutcome` and **never
   raises**: a missing dependency, a recording with no beeps, and a cancelled run

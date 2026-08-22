@@ -18,6 +18,7 @@ Artifact layout for ``/sessions/p001.m4a``::
         Slices/Trial_NNN.wav
         p001_Full_Analysis_Results.csv
         p001_Analysis_Results.csv
+        p001_beep_pairing_report.csv   only when a beep did not pair 1:1
 """
 
 import importlib.util
