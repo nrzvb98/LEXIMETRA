@@ -17,8 +17,8 @@ authors:
     orcid: "https://orcid.org/0009-0006-4316-3194"
 repository-code: https://github.com/nrzvb98/LEXIMETRA
 license: MIT
-version: 0.2.0
-date-released: "2026-08-12"
+version: 0.2.2
+date-released: "2026-10-25"
 keywords:
   - reaction time
   - speech onset

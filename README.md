@@ -65,7 +65,7 @@ packaging/macos/build_app.sh
 ```
 
 The script creates `dist/LEXIMETRA.app` and the sendable archive
-`dist/LEXIMETRA_0.2.0_macos_arm64.zip` (**212 MB**). The archive includes Python,
+`dist/LEXIMETRA_0.2.2_macos_arm64.zip` (**212 MB**). The archive includes Python,
 the Python dependencies, a bundled LGPL-oriented FFmpeg build for M4A/M4V
 decoding, and the analysis pipeline with its Silero VAD model, so recipients need
 neither Python, nor Homebrew FFmpeg, nor a network connection on first run.
@@ -86,7 +86,7 @@ x86_64 Python 3.11 virtualenv at `.venv-x86_64`:
 TARGET_ARCH=x86_64 packaging/macos/build_app.sh
 ```
 
-That produces `dist/LEXIMETRA_0.2.0_macos_x86_64.zip`, always without automatic
+That produces `dist/LEXIMETRA_0.2.2_macos_x86_64.zip`, always without automatic
 analysis — there are no macOS x86_64 torch wheels — so it is a verification-only
 app. On Apple Silicon build machines the Intel build requires Rosetta and an
 x86_64-capable Python environment; on Intel Macs it can be built natively.
@@ -109,7 +109,7 @@ powershell -ExecutionPolicy Bypass -File packaging\windows\build_app.ps1
 ```
 
 The script creates `dist\LEXIMETRA\LEXIMETRA.exe` and the sendable archive
-`dist\LEXIMETRA_0.2.0_windows_x64.zip`. The Windows package bundles Python, the
+`dist\LEXIMETRA_0.2.2_windows_x64.zip`. The Windows package bundles Python, the
 Python dependencies, the LEXIMETRA icon, and `ffmpeg.exe` / `ffprobe.exe` under
 `_internal\bin` so M4A/M4V decoding works without a user-installed FFmpeg.
 
@@ -401,7 +401,7 @@ python -c "import importlib.metadata as m; print(m.version('leximetra'))"
 
 APA style, substituting the version and year of the release you used:
 
-> Nauryzbayeva, A. (2026). *LEXIMETRA* (Version 0.2.0) [Computer software].
+> Nauryzbayeva, A. (2026). *LEXIMETRA* (Version 0.2.2) [Computer software].
 > https://github.com/nrzvb98/LEXIMETRA
 
 ### BibTeX
@@ -410,7 +410,7 @@ APA style, substituting the version and year of the release you used:
 @software{nauryzbayeva_leximetra_2026,
   author  = {Nauryzbayeva, Aisara},
   title   = {{LEXIMETRA}},
-  version = {0.2.0},
+  version = {0.2.2},
   year    = {2026},
   url     = {https://github.com/nrzvb98/LEXIMETRA},
   license = {MIT}
@@ -421,7 +421,7 @@ APA style, substituting the version and year of the release you used:
 
 Name the version where you describe how the reaction times were obtained:
 
-> Reaction times were extracted with LEXIMETRA v0.2.0 (Nauryzbayeva, 2026) — beep
+> Reaction times were extracted with LEXIMETRA v0.2.2 (Nauryzbayeva, 2026) — beep
 > detection, per-trial slicing, and Silero VAD speech-onset marking — and every
 > trial was then checked and corrected by hand in the application's trial editor.
 
