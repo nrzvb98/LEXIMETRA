@@ -230,8 +230,8 @@ column reference.
 | `rt_first_speech_ms` | Beep → first sound, including fillers (ms). |
 | `rt_main_response_ms` | Beep → main word, skipping fillers (ms). |
 | `prefiller_present` | Whether an `Umm… Word` pattern was detected. |
-| `flag_anticipatory` | First speech at or under 150 ms after the beep — physiologically too fast. |
-| `flag_timeout` | No response detected in the trial window. |
+| `flag_anticipatory` | First speech at or under 150 ms after picture onset (500 ms after the beep by default) — too fast. |
+| `flag_timeout` | No speech detected, or first speech more than 3000 ms after picture onset. |
 | `segments_count` | Number of distinct speech bursts in the trial. |
 
 ## Project structure

@@ -24,6 +24,16 @@ Pipeline: 1.2.0.
   before acceptance. The status bar reports how many quiet beeps were
   recovered so the extra trials don't appear unexplained.
 
+### Fixed
+
+- `flag_anticipatory`, `flag_timeout` and `response_type` are now measured from
+  picture onset instead of beep onset. Exported RTs are referenced to the beep,
+  but the picture appears `STIMULUS_ONSET_AFTER_BEEP_MS` (default 500 ms) later,
+  so the anticipatory flag previously caught only speech before the picture and
+  the timeout flag fired 500 ms early. A trial with no detected speech is now
+  always flagged as timeout in the exported CSV. Exported RT values are
+  unchanged.
+
 ### Changed
 
 - The processing pipeline is maintained in this repository. It was a

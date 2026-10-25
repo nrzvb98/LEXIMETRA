@@ -222,6 +222,8 @@ def process_trial_data(trial_name, speech_segments, sr, cfg: LeximetraConfig, y=
     first_speech_onset_ms = merged_bursts[0]['start_ms']
     trial_results['rt_first_speech_ms'] = first_speech_onset_ms
 
+    # Provisional: these times are relative to the trial slice (beep offset).
+    # pipeline.py reassigns response_type relative to picture onset.
     if first_speech_onset_ms <= cfg.ANTICIPATORY_THRESHOLD_MS:
         trial_results['response_type'] = 'Anticipatory'
     elif first_speech_onset_ms > cfg.TIMEOUT_THRESHOLD_MS:

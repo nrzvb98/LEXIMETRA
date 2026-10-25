@@ -113,6 +113,7 @@ def build_software_export(
     anticipatory_threshold_ms: float = 150.0,
     timeout_threshold_ms: float = 3000.0,
     next_beep_margin_s: float = 0.05,
+    stimulus_onset_after_beep_ms: float = 500.0,
 ) -> pd.DataFrame:
     required_columns = {"trial_name", "beep_timestamp_global", "rt_first_speech_ms", "rt_main_response_ms"}
     missing = required_columns - set(final_results.columns)
@@ -140,8 +141,12 @@ def build_software_export(
 
     rt_first = pd.to_numeric(export["rt_first_speech_ms"], errors="coerce")
     rt_main = pd.to_numeric(export["rt_main_response_ms"], errors="coerce")
-    flag_anticipatory = rt_first <= anticipatory_threshold_ms
-    flag_timeout = rt_first > timeout_threshold_ms
+    # Exported RTs are measured from beep onset. The anticipatory and timeout
+    # thresholds are defined relative to picture onset, which follows the beep
+    # by stimulus_onset_after_beep_ms.
+    rt_first_from_picture = rt_first - stimulus_onset_after_beep_ms
+    flag_anticipatory = rt_first_from_picture <= anticipatory_threshold_ms
+    flag_timeout = rt_first.isna() | (rt_first_from_picture > timeout_threshold_ms)
 
     # Propagate the upstream analysis instead of hardcoding. A prefiller ("Umm... Word")
     # is present whenever the pipeline flagged a hesitation pattern, or equivalently

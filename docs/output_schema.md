@@ -17,8 +17,8 @@ present; unrecognised extra columns are ignored.
 | `rt_first_speech_ms` | milliseconds | Beep start → the very first sound, including fillers. |
 | `rt_main_response_ms` | milliseconds | Beep start → the main word, skipping fillers if detected. |
 | `prefiller_present` | boolean | Whether an `Umm… Word` pattern was detected. |
-| `flag_anticipatory` | boolean | First speech landed at or under 150 ms after the beep — physiologically too fast to be a real response. |
-| `flag_timeout` | boolean | No response within 3000 ms of the beep, or none detected at all. |
+| `flag_anticipatory` | boolean | First speech landed at or under 150 ms after picture onset (picture onset = `STIMULUS_ONSET_AFTER_BEEP_MS` after the beep; 500 ms by default) — too fast to be a real naming response. |
+| `flag_timeout` | boolean | No speech detected, or first speech more than 3000 ms after picture onset (`STIMULUS_ONSET_AFTER_BEEP_MS` after the beep; 500 ms by default). |
 | `segments_count` | integer | Number of distinct speech bursts found in this trial. |
 
 ## Value encoding
