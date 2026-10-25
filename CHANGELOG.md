@@ -12,7 +12,15 @@ Versions follow `pyproject.toml`.
 
 ## Unreleased
 
+## 0.2.2 — 2026-10-25
+
 Pipeline: 1.2.0.
+
+No 0.2.1 was released from this repository. A local macOS build labelled
+0.2.1 (built 2026-08-14) was used to generate the reaction times in the
+Leximetra validation study. On the recordings compared, its output was
+identical to output produced before that build. 0.2.2 is the first release
+after 0.2.0.
 
 ### Added
 
