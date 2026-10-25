@@ -125,6 +125,12 @@ class LeximetraConfig:
     MIN_FIRST_BURST_DUR_MS: int = 75
     MIN_SECOND_BURST_DUR_MS: int = 150
     MIN_PAUSE_BETWEEN_BURSTS_MS: int = 100
+    # Delay from beep onset to picture (stimulus) onset. Depends on the
+    # experiment; 500 ms in the validated picture-naming task.
+    STIMULUS_ONSET_AFTER_BEEP_MS: float = 500
+    # Both thresholds are measured from picture onset, not from the beep:
+    # anticipatory = first speech <= 150 ms after the picture appeared;
+    # timeout = no speech, or first speech > 3000 ms after the picture appeared.
     ANTICIPATORY_THRESHOLD_MS: float = 150
     TIMEOUT_THRESHOLD_MS: float = 3000
 

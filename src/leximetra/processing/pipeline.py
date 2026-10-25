@@ -21,6 +21,7 @@ import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from . import beeps as beeps_mod
@@ -178,6 +179,20 @@ def process_audio(
     df_final_results['rt_first_speech_ms'] = df_final_results['rt_first_speech_ms'] + beep_duration_ms
     df_final_results['rt_main_response_ms'] = df_final_results['rt_main_response_ms'] + beep_duration_ms
 
+    # response_type from metrics.py was assigned on slice-relative times (from
+    # beep offset). Reassign it on picture-relative times so it agrees with the
+    # exported anticipatory/timeout flags.
+    rt_first_from_picture = df_final_results['rt_first_speech_ms'] - cfg.STIMULUS_ONSET_AFTER_BEEP_MS
+    df_final_results['response_type'] = np.select(
+        [
+            df_final_results['rt_first_speech_ms'].isna()
+            | (rt_first_from_picture > cfg.TIMEOUT_THRESHOLD_MS),
+            rt_first_from_picture <= cfg.ANTICIPATORY_THRESHOLD_MS,
+        ],
+        ['Timeout', 'Anticipatory'],
+        default='Valid Response',
+    )
+
     df_final_results = df_final_results[FINAL_COLUMNS]
 
     if df_final_results.empty:
@@ -224,6 +239,7 @@ def process_audio(
             anticipatory_threshold_ms=cfg.ANTICIPATORY_THRESHOLD_MS,
             timeout_threshold_ms=cfg.TIMEOUT_THRESHOLD_MS,
             next_beep_margin_s=cfg.NEXT_BEEP_MARGIN_S,
+            stimulus_onset_after_beep_ms=cfg.STIMULUS_ONSET_AFTER_BEEP_MS,
         )
         csv_paths = {"full": full_path, "analysis": analysis_path, "output": output_path}
         df_output = pd.read_csv(output_path)
@@ -244,6 +260,7 @@ def process_audio(
             anticipatory_threshold_ms=cfg.ANTICIPATORY_THRESHOLD_MS,
             timeout_threshold_ms=cfg.TIMEOUT_THRESHOLD_MS,
             next_beep_margin_s=cfg.NEXT_BEEP_MARGIN_S,
+            stimulus_onset_after_beep_ms=cfg.STIMULUS_ONSET_AFTER_BEEP_MS,
         )
 
     progress("export", 1, 1)
